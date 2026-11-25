@@ -103,6 +103,19 @@ pre{white-space:pre-wrap;font-size:13px;background:var(--arcilla);padding:12px;b
 iframe.prev{width:100%;height:560px;border:1px solid var(--line);border-radius:12px;background:#fff}
 code.k{background:var(--arcilla);padding:3px 8px;border-radius:6px;font-size:13px;word-break:break-all}
 .endp td:first-child{white-space:nowrap}
+.alerts{display:grid;gap:12px}
+.al{border:1px solid var(--line);border-left:6px solid var(--warn);border-radius:12px;padding:14px 16px;background:var(--paper)}
+.al.bad{border-left-color:var(--bad)}.al.ok{border-left-color:var(--ok)}
+.al h4{margin:0 0 4px;font-family:Lora,serif;font-size:17px}.al p{margin:0 0 8px;color:var(--mute);font-size:14.5px}
+.al table{font-size:14px}.al td{padding:6px 8px}.al th{padding:6px 8px}
+.steps{margin:8px 0 0;padding-left:20px;line-height:1.6}.steps li{margin-bottom:4px}
+.sw2{position:relative;display:inline-block;width:46px;height:26px}.sw2 input{opacity:0;width:0;height:0}.sw2 span{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s;cursor:pointer}.sw2 span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}.sw2 input:checked+span{background:var(--canela)}.sw2 input:checked+span:before{transform:translateX(20px)}
+td.past{background:color-mix(in srgb,var(--cacao) 7%,transparent)}
+.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+input.xs{width:80px;min-height:38px;padding:5px 8px;text-align:right}
+.diff-neg{color:var(--bad);font-weight:700}.diff-pos{color:var(--ok);font-weight:700}
+details summary{min-height:32px}
+.btn.ghost{background:transparent;color:var(--canela);cursor:pointer}
 </style>
 </head>
 <body>
@@ -141,59 +154,84 @@ code.k{background:var(--arcilla);padding:3px 8px;border-radius:6px;font-size:13p
 <section class="view" id="v-resumen">
   <div class="head"><div><h1 id="r-title">Resumen</h1><p id="r-sub"></p></div></div>
   <div class="grid g4" id="r-kpis"></div>
-  <div class="card"><h3>Cómo trabaja el sistema</h3>
-    <div class="flow"><div><b>1 · Ventas</b><span>Se cargan a diario desde la app o automáticamente con Make</span></div><div><b>2 · Proyección</b><span>Promedio ponderado de los últimos 4 días iguales</span></div><div><b>3 · Producción</b><span>Orden diaria por correo al obrador</span></div><div><b>4 · Compras</b><span>Pedidos semanales a cada proveedor</span></div></div>
-  </div>
-  <div class="card"><div class="head" style="margin:0 0 8px"><h3>Venta semanal (S/) — últimas 12 semanas y la proyectada</h3><div class="legend"><span><i class="dot" style="background:var(--cacao)"></i>Barranco</span><span><i class="dot" style="background:var(--canela)"></i>San Isidro</span><span><i class="dot" style="background:var(--miel)"></i>Proyección</span></div></div>
+  <div class="card"><div class="head" style="margin:0 0 4px"><h3>Venta semanal (S/): 12 semanas reales y la próxima proyectada</h3><div class="legend"><span><i class="dot" style="background:var(--cacao)"></i>Barranco</span><span><i class="dot" style="background:var(--canela)"></i>San Isidro</span><span><i class="dot" style="background:var(--miel)"></i>Semana proyectada</span></div></div>
+    <p class="note" style="margin:0 0 6px">Cada barra suma la venta de lunes a domingo de los dos locales; el número encima es el total de la semana. La última barra, en dorado, es lo que el sistema espera vender la próxima semana.</p>
     <div class="fig" id="r-chart"><svg></svg></div></div>
+  <div class="card"><h3>Alertas y plan de acción</h3><p class="note" style="margin:4px 0 12px">Cada alerta se calcula con los datos cargados y trae qué hacer, quién lo hace y para cuándo.</p><div id="r-alerts" class="alerts"></div></div>
   <div class="card" id="r-acc"></div>
   <div class="grid g2">
     <div class="card"><h3>Lo que más se venderá la próxima semana</h3><div class="scroll"><table id="r-top"></table></div></div>
-    <div class="card"><h3>Alertas para la gestión</h3><div id="r-alerts"></div></div>
+    <div class="card"><h3>Cómo trabaja el sistema</h3><ol class="steps"><li><b>Ventas:</b> llegan cada noche desde la hoja del POS con Make.</li><li><b>Proyección:</b> promedio ponderado de los 4 mismos días anteriores, sin días atípicos.</li><li><b>Producción:</b> la orden del día siguiente llega por correo al obrador a las 6 p. m.; el obrador registra lo producido con foto.</li><li><b>Inventario y compras:</b> el conteo físico se sube en Excel y los pedidos salen a cada proveedor los domingos.</li><li><b>Control:</b> el reporte semanal compara proyectado vs. real, cumplimiento de producción y food cost.</li></ol></div>
   </div>
 </section>
 
 <section class="view" id="v-ventas">
-  <div class="head"><div><h1>Ventas históricas</h1><p>Lo vendido cada día por local, canal y producto. Los días atípicos se marcan y quedan fuera del promedio.</p></div></div>
+  <div class="head"><div><h1>Ventas históricas</h1><p id="h-sub">Lo vendido cada día por local, canal y producto.</p></div></div>
   <div class="card controls">
+    <label class="f">Semana<select id="h-sem"></select></label>
     <label class="f">Local<select id="h-local"></select></label>
     <label class="f">Canal<select id="h-canal"></select></label>
     <label class="f">Producto<select id="h-prod"></select></label>
     <label class="f">Medida<select id="h-med"><option value="s">Venta S/</option><option value="u">Unidades</option></select></label>
   </div>
-  <div class="card"><h3 id="h-ctitle">Venta diaria</h3><div class="legend" style="margin:6px 0"><span><i class="dot" style="background:var(--canela)"></i>Día normal</span><span><i class="dot" style="background:var(--bad)"></i>Día atípico (excluido)</span></div><div class="fig" id="h-chart"><svg></svg></div></div>
-  <div class="card"><h3>Mapa semana × día de la semana</h3><p class="note">El patrón que usa la proyección: cada día se compara con los mismos días de semanas anteriores.</p><div class="scroll"><table id="h-heat"></table></div></div>
-  <div class="grid g2">
-    <div class="card"><h3>Días atípicos</h3><p class="note">Desmarca un día para volver a incluirlo en el promedio, o agrega uno nuevo.</p><div id="h-atip"></div>
-      <div class="controls" style="margin-top:10px"><label class="f">Fecha<input type="date" id="a-fecha"></label><label class="f">Local<select id="a-local"></select></label><label class="f">Motivo<input type="text" id="a-mot" placeholder="Ej. evento en la cuadra"></label><button id="a-add">Agregar</button></div></div>
-    <div class="card"><h3>Cargar ventas</h3><p class="note">CSV con columnas <b>fecha, local, canal, producto_id, unidades</b>. También llegan solas cada noche con Make. Al cargar, todo se recalcula.</p>
-      <div class="controls"><input type="file" id="up-file" accept=".csv,text/csv"><button id="up-demo" class="ghost">Cargar semana de ejemplo (16–22 nov)</button><button id="up-reset" class="ghost">Restablecer demo</button></div>
-      <p class="note" id="up-msg"></p></div>
+  <div class="grid g4" id="h-kpis"></div>
+  <div class="card"><h3 id="h-ctitle">Venta diaria</h3><div class="legend" style="margin:6px 0"><span><i class="dot" style="background:var(--canela)"></i>Día normal</span><span><i class="dot" style="background:var(--bad)"></i>Día atípico (no entra al promedio)</span></div><div class="fig" id="h-chart"><svg></svg></div></div>
+  <div class="card"><h3 id="h-ttitle">Detalle</h3><p class="note" id="h-tnote"></p><div class="scroll"><table id="h-heat"></table></div></div>
+  <div class="card"><div class="head" style="margin:0 0 6px"><div><h3>Días atípicos</h3><p class="note" style="margin:4px 0 0">Feriados, cortes de luz o eventos que no se repiten. Si un día queda marcado como “Excluido”, la proyección lo salta y toma el mismo día de la semana anterior.</p></div></div>
+    <div class="scroll"><table id="h-atip"></table></div>
+    <div class="controls" style="margin-top:14px"><label class="f">Fecha<input type="date" id="a-fecha"></label><label class="f">Local<select id="a-local"></select></label><label class="f" style="flex:1;min-width:200px">Motivo<input type="text" id="a-mot" placeholder="Ej. feriado, evento en la cuadra"></label><button id="a-add">Agregar día atípico</button></div></div>
+  <div class="card"><h3>Carga de ventas</h3>
+    <div class="grid g2" style="margin-top:10px">
+      <div><p style="margin:0 0 8px"><span class="badge ok-b">Automática</span> Cada noche a las 11:30 p. m. Make lee la hoja de Google Sheets del POS y sube las ventas del día. No hay que hacer nada.</p>
+        <p class="note" id="h-lastload"></p></div>
+      <div><p style="margin:0 0 8px"><span class="badge">Manual</span> Si un día falla la carga, sube el archivo del POS en CSV:</p>
+        <div class="controls"><button class="ghost" id="up-tpl">1. Descargar plantilla CSV</button><label class="btn ghost" for="up-file" style="display:inline-flex;align-items:center">2. Subir archivo lleno</label><input type="file" id="up-file" accept=".csv,text/csv" hidden></div>
+        <p class="note" id="up-msg"></p></div>
+    </div>
+    <details style="margin-top:12px"><summary class="note" style="cursor:pointer">Modo demostración (para la clase)</summary><div class="controls" style="margin-top:10px"><button id="up-reset" class="ghost">Volver al 15 nov</button><button id="up-demo" class="ghost">Cargar semana 16–22 nov</button></div><p class="note">Sirve para mostrar en vivo cómo cambia todo al llegar ventas nuevas.</p></details>
   </div>
 </section>
 
 <section class="view" id="v-proyeccion">
   <div class="head"><div><h1>Proyección de ventas</h1><p id="p-sub"></p></div></div>
+  <div class="tabs" id="p-mode"><button class="tab on" data-pm="sem">Por semana</button><button class="tab" data-pm="mes">Por mes</button></div>
   <div class="card controls">
+    <label class="f" id="p-semw">Semana<select id="p-sem"></select></label>
+    <label class="f" id="p-mesw" hidden>Mes<select id="p-mes"></select></label>
     <label class="f">Local<select id="p-local"></select></label>
     <label class="f">Canal<select id="p-canal"></select></label>
     <label class="f">Método<select id="p-met"><option value="w">Ponderado 40/30/20/10</option><option value="s">Promedio simple</option></select></label>
+    <label class="f" id="p-ajw" hidden>Ajuste por temporada<select id="p-aj"><option value="0">Sin ajuste</option><option value="0.05">+5 %</option><option value="0.1">+10 %</option><option value="0.15">+15 % (campaña navideña)</option><option value="0.2">+20 %</option><option value="-0.1">−10 %</option></select></label>
   </div>
-  <div class="card"><p class="note">Unidades proyectadas por día. Toca un número para ver de dónde sale.</p><div class="scroll"><table id="p-table"></table></div><div id="p-exp"></div></div>
+  <div class="grid g4" id="p-kpis"></div>
+  <div class="card" id="p-chartc" hidden><h3 id="p-ctitle"></h3><div class="legend" style="margin:6px 0"><span><i class="dot" style="background:var(--cacao)"></i>Venta real</span><span><i class="dot" style="background:var(--miel)"></i>Proyectado</span></div><div class="fig" id="p-chart"><svg></svg></div></div>
+  <div class="card"><p class="note" id="p-tnote">Unidades proyectadas por día. Toca un número para ver de dónde sale.</p><div class="scroll"><table id="p-table"></table></div><div id="p-exp"></div></div>
 </section>
 
 <section class="view" id="v-produccion">
   <div class="head"><div><h1>Órdenes de producción</h1><p>El obrador central produce para los dos locales. Las tortas y bandejas se hornean enteras y luego se porcionan.</p></div>
-    <div class="controls"><label class="f">Colchón de seguridad<select id="o-seg"><option value="0">0 %</option><option value="0.05">5 %</option><option value="0.1">10 %</option><option value="0.15">15 %</option></select></label><button class="ghost" id="o-print">Imprimir</button><button class="ghost" id="o-copy">Copiar orden</button></div></div>
+    <div class="controls"><label class="f">Semana<select id="o-sem"></select></label><label class="f">Stock de seguridad<select id="o-seg"><option value="0">0 %</option><option value="0.05">5 %</option><option value="0.1">10 %</option><option value="0.15">15 %</option></select></label><button class="ghost" id="o-print">Imprimir</button><button class="ghost" id="o-copy">Copiar orden</button></div></div>
   <div class="tabs" id="o-tabs"></div>
-  <div class="card"><h3 id="o-t1">Productos terminados</h3><div class="scroll"><table id="o-prod" class="stack"></table></div></div>
+  <div class="grid g4" id="o-kpis"></div>
+  <div class="card"><h3 id="o-t1">Productos terminados</h3><p class="note">El stock de seguridad es un porcentaje extra sobre lo proyectado para no quedarse sin producto si el día vende más de lo normal.</p><div class="scroll"><table id="o-prod" class="stack"></table></div></div>
+  <div class="card" id="o-regc"><h3 id="o-t3">Registro de producción real</h3><p class="note">Al terminar, el obrador anota cuánto produjo, cuánto sobró al cierre y sube una foto. Queda guardado con fecha, hora y usuario.</p><div class="scroll"><table id="o-reg"></table></div></div>
   <div class="card"><h3 id="o-t2">Recetas base a preparar</h3><p class="note">Toca una receta para ver los ingredientes ya escalados.</p><div class="scroll"><table id="o-base"></table></div><div id="o-exp"></div></div>
 </section>
 
+<section class="view" id="v-inventario">
+  <div class="head"><div><h1>Inventario</h1><p>El conteo físico se hace en Excel y se sube aquí. El sistema compara lo contado contra lo que debería haber y actualiza el stock que usan las compras.</p></div></div>
+  <div class="grid g4" id="i-kpis"></div>
+  <div class="card"><h3>Cargar un conteo</h3>
+    <ol class="steps"><li><b>Descarga la plantilla.</b> Trae todos los insumos con su unidad y el stock que el sistema tiene registrado.</li><li><b>Cuenta y llena</b> la columna “Stock contado” en kg o litros. Deja vacío lo que no contaste.</li><li><b>Sube el archivo.</b> Revisa las diferencias y confirma.</li></ol>
+    <div class="controls" style="margin-top:12px"><label class="f">Fecha del conteo<input type="date" id="i-fecha"></label><button id="i-tpl">Descargar plantilla Excel</button><label class="btn ghost" for="i-file" style="display:inline-flex;align-items:center">Subir plantilla llena</label><input type="file" id="i-file" accept=".xlsx,.xls" hidden></div>
+    <div id="i-prev"></div></div>
+  <div class="card"><h3>Historial de inventarios</h3><div class="scroll"><table id="i-hist"></table></div></div>
+</section>
+
 <section class="view" id="v-compras">
-  <div class="head"><div><h1>Lista de compras</h1><p id="c-sub"></p></div><button class="ghost" id="c-copy">Copiar pedidos</button></div>
+  <div class="head"><div><h1>Lista de compras</h1><p id="c-sub"></p></div><div class="controls"><label class="f">Semana<select id="c-sem"></select></label><button class="ghost" id="c-copy">Copiar pedidos</button></div></div>
   <div class="grid g4" id="c-kpis"></div>
-  <div class="card"><p class="note">El stock se guarda en la base de datos al editarlo. Se pide en la presentación del proveedor, redondeando hacia arriba.</p><div class="scroll"><table id="c-table"></table></div></div>
+  <div class="card"><p class="note" id="c-note"></p><div class="scroll"><table id="c-table"></table></div></div>
 </section>
 
 <section class="view" id="v-costos">
@@ -208,17 +246,18 @@ code.k{background:var(--arcilla);padding:3px 8px;border-radius:6px;font-size:13p
   <div id="rc-body"></div>
 </section>
 
+
 <section class="view" id="v-automatizaciones">
   <div class="head"><div><h1>Automatizaciones</h1><p>Make se conecta a esta API para cargar ventas y enviar correos sin intervención manual.</p></div></div>
   <div class="card"><h3>Escenarios de Make</h3><div class="scroll"><table id="m-esc"></table></div></div>
   <div class="grid g2">
     <div class="card"><h3>Correos</h3><div class="controls" style="flex-direction:column;align-items:stretch">
       <label class="f">Correo del obrador (orden diaria)<input type="text" id="cf-obr"></label>
-      <label class="f">Correo del dueño (reporte semanal)<input type="text" id="cf-due"></label></div>
+      <label class="f">Correo del dueño (reporte semanal y alertas)<input type="text" id="cf-due"></label><label class="f">Días de cobertura para alerta de stock<select id="cf-cob"><option>1</option><option>2</option><option>3</option><option>5</option><option>7</option></select></label></div>
       <h3 style="margin:16px 0 8px">Proveedores</h3><div class="scroll"><table id="cf-prov"></table></div>
       <div class="controls" style="margin-top:12px"><button id="cf-save">Guardar</button></div></div>
     <div class="card"><h3>Vista previa de los correos</h3><p class="note">Lo mismo que Make envía, generado ahora con los datos actuales.</p>
-      <div class="controls"><button class="ghost" data-prev="produccion">Orden de mañana</button><button class="ghost" data-prev="pedidos">Pedidos</button><button class="ghost" data-prev="reporte">Reporte semanal</button></div>
+      <div class="controls"><button class="ghost" data-prev="produccion">Orden de mañana</button><button class="ghost" data-prev="pedidos">Pedidos</button><button class="ghost" data-prev="reporte">Reporte semanal</button><button class="ghost" data-prev="alertas">Alerta de stock</button></div>
       <div id="m-prev" style="margin-top:12px"></div></div>
   </div>
   <div class="card"><h3>Conexión de la API</h3><p class="note">Make usa esta dirección y la clave en el encabezado <b>x-api-key</b>. No compartas la clave.</p>
