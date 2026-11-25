@@ -25,6 +25,10 @@ export function createEngine(D){
   const prodCost=p=>Object.entries(p.bases).reduce((a,[b,g])=>a+g*costG[b],0)+Object.entries(p.dir).reduce((a,[i,q])=>a+q*INS[i].precioKg/1000,0);
   const PC=PR.map(prodCost), NET=PR.map(p=>p.precio/1.18), FC=PR.map((p,i)=>PC[i]/NET[i]);
   const isAtip=(f,l)=>D.atipicos.some(a=>a.activo!==false&&a.fecha===f&&(a.local===L[l]||a.local==='Todos'));
+  // Calendario de eventos: factor sobre lo proyectado para esa fecha, local y categoría
+  const EVS=(D.eventos||[]).filter(e=>e.activo!==false);
+  const evOf=(f,l)=>EVS.filter(e=>e.fecha===f&&(e.local==='Todos'||e.local===L[l]));
+  const evF=(f,l,pi)=>evOf(f,l).reduce((a,e)=>(!e.categoria||e.categoria===PR[pi].cat)?a*e.factor:a,1);
   const n=()=>D.fechas.length;
   const last=()=>D.fechas[n()-1];
 
@@ -35,7 +39,7 @@ export function createEngine(D){
       const idx=[];for(let k=cutoff-1;k>=0&&idx.length<4;k--){if(wdOf(D.fechas[k])===wd&&!isAtip(D.fechas[k],l))idx.push(k)}
       const w=D.metodo==='s'?idx.map(()=>1):W.slice(0,idx.length);const sw=w.reduce((a,b)=>a+b,0)||1;
       EXPL[f+'|'+l]=idx.map((k,j)=>({k,w:w[j]/sw}));
-      return C.map((_,c)=>PR.map((_,p)=>idx.reduce((a,k,j)=>a+D.ventas[k][l][c][p]*w[j],0)/sw));
+      return C.map((_,c)=>PR.map((_,p)=>idx.reduce((a,k,j)=>a+D.ventas[k][l][c][p]*w[j],0)/sw*evF(f,l,p)));
     })});
     return {dates,H,EXPL};
   }
@@ -56,6 +60,34 @@ export function createEngine(D){
     const bases={};
     prods.forEach(o=>Object.entries(o.p.bases).forEach(([b,g])=>{bases[b]=(bases[b]||0)+g*o.porc}));
     return {prods,bases};
+  }
+  // Tandas: reparte lo que va a cada local según la venta por hora de los últimos 28 días
+  const TD=D.tandas||[];
+  function shares(pid,l,f){
+    const td=wdOf(f)>=5?'fs':'lv';const cur=((D.curva||{})[pid]||{})[L[l]]||{};const h=cur[td]||{};
+    const s=TD.map(t=>{let a=0;for(let x=t.desde;x<=t.hasta;x++)a+=h[x]||0;return a});const tot=s.reduce((a,b)=>a+b,0);
+    return tot?s.map(x=>x/tot):TD.map((_,i)=>i===0?1:0);
+  }
+  function tandas(o,f){ // o = elemento de production().prods
+    if(!TD.length)return null;
+    const porL=L.map((_,l)=>{
+      const n=o.per[l];if(o.p.porc>1)return TD.map((_,i)=>i===0?n:0); // tortas y bandejas: enteras en la primera tanda
+      const sh=shares(o.p.id,l,f);const raw=sh.map(x=>x*n);const b=raw.map(Math.floor);let rest=n-b.reduce((a,x)=>a+x,0);
+      raw.map((x,i)=>({i,fr:x-Math.floor(x)})).sort((a,c)=>c.fr-a.fr||a.i-c.i).forEach(z=>{if(rest>0){b[z.i]++;rest--}});return b;
+    });
+    const tot=TD.map((_,i)=>porL.reduce((a,r)=>a+r[i],0));
+    if(o.p.porc>1){tot[0]=o.porc;}
+    return {porL,tot};
+  }
+  // Consumo teórico de insumos por unidad vendida y por un conjunto de unidades
+  const PERU=PR.map(p=>{const m={};Object.entries(p.bases).forEach(([b,g])=>{const B=BAS[b],y=baseYield(B);Object.entries(B.ing).forEach(([i,q])=>m[i]=(m[i]||0)+g/y*q)});Object.entries(p.dir).forEach(([i,q])=>m[i]=(m[i]||0)+q);return m});
+  function consumo(units){const out={};units.forEach((u,pi)=>{if(u)Object.entries(PERU[pi]).forEach(([i,q])=>out[i]=(out[i]||0)+q*u)});return out}
+  function unidadesVendidas(f0,f1){const u=PR.map(()=>0);D.fechas.forEach((f,k)=>{if(f>=f0&&f<=f1)allL.forEach(l=>allC.forEach(c=>PR.forEach((_,pi)=>u[pi]+=D.ventas[k][l][c][pi])))});return u}
+  // Stock efectivo: stock registrado al corte (último conteo) menos lo consumido según recetas por lo vendido y lo que sobró después
+  function stockEfectivo(base,desde,sobrante=[],hasta='9999-12-31'){
+    const out={...base};if(!desde)return out;
+    const u=unidadesVendidas(addD(desde,1),hasta);sobrante.forEach(r=>{if(r.fecha>desde&&r.fecha<=hasta&&PRI[r.producto_id]!==undefined)u[PRI[r.producto_id]]+=+r.sobrante});
+    const c=consumo(u);Object.keys(out).forEach(i=>{out[i]=Math.max(0,(out[i]||0)-(c[i]||0))});return out;
   }
   function needs(P,days=P.dates.map((_,i)=>i),seg=+D.colchon||0){
     const need={};IN.forEach(i=>need[i.id]=0);
@@ -89,12 +121,13 @@ export function createEngine(D){
   const realDay=(k,ls=allL,cs=allC,prodSel='all',med='s')=>{let t=0;ls.forEach(l=>cs.forEach(c=>PR.forEach((p,pi)=>{if(prodSel==='all'||prodSel==pi){const u=D.ventas[k][l][c][pi];t+=med==='u'?u:u*p.precio}})));return t};
   function trends(){const N=n();if(N<56)return[];const sum=(a,b,pi)=>{let t=0;for(let k=a;k<b;k++)allL.forEach(l=>allC.forEach(c=>t+=D.ventas[k][l][c][pi]));return t};
     return PR.map((p,pi)=>({p,g:sum(N-28,N,pi)/Math.max(1,sum(N-56,N-28,pi))-1})).sort((a,b)=>b.g-a.g)}
-  return {D,L,C,PR,BA,IN,INS,BAS,PRI,allL,allC,baseYield,baseCost,costG,PC,NET,FC,isAtip,last,n,project,nextDates,uLoc,uDay,salesDay,production,needs,purchases,fcOf,backtest,realDay,trends};
+  return {D,L,C,PR,BA,IN,INS,BAS,PRI,allL,allC,evOf,evF,tandas,stockEfectivo,shares,TD,PERU,consumo,unidadesVendidas,baseYield,baseCost,costG,PC,NET,FC,isAtip,last,n,project,nextDates,uLoc,uDay,salesDay,production,needs,purchases,fcOf,backtest,realDay,trends};
 }
 
 // Arma el dataset del motor a partir de filas de la base de datos
 export function buildDataset(rows){
   const {locales,canales,productos,producto_bases,producto_insumos,bases,base_ing,insumos,ventas,atipicos,config}=rows;
+  const curva={};(rows.curva||[]).forEach(r=>{const a=((curva[r.producto_id]=curva[r.producto_id]||{})[r.local]=curva[r.producto_id][r.local]||{});(a[r.td]=a[r.td]||{})[r.hora]=+r.u});
   const L=locales.map(x=>x.nombre), C=canales.map(x=>x.nombre);
   const prods=productos.map(p=>({id:p.id,nombre:p.nombre,cat:p.categoria,precio:+p.precio,lugar:p.lugar,porc:+p.porciones,uprod:p.unidad_prod,bases:{},dir:{}}));
   const PI=Object.fromEntries(prods.map((p,i)=>[p.id,i]));
@@ -110,5 +143,7 @@ export function buildDataset(rows){
   ventas.forEach(v=>{const p=PI[v.producto_id];if(p!==undefined)V[FI[v.fecha]][LI[v.local]][CI[v.canal]][p]=+v.unidades});
   return {locales:L,canales:C,productos:prods,bases:bs,insumos:ins,fechas,ventas:V,
     atipicos:atipicos.map(a=>({id:a.id,fecha:a.fecha,local:a.local,motivo:a.motivo,activo:a.activo})),
+    eventos:(rows.eventos||[]).map(e=>({id:e.id,fecha:e.fecha,nombre:e.nombre,local:e.local,categoria:e.categoria||null,factor:+e.factor,activo:e.activo})),
+    tandas:(rows.tandas||[]).map(t=>({id:t.id,nombre:t.nombre,desde:+t.hora_desde,hasta:+t.hora_hasta,hornear:t.hornear})),curva,
     colchon:+(config.colchon??0.05),metodo:config.metodo??'w'};
 }

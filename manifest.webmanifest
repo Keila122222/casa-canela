@@ -1,0 +1,23 @@
+{
+  "name": "Casa Canela · Planificador",
+  "short_name": "Casa Canela",
+  "description": "Proyección de ventas, órdenes de producción, compras e inventario del obrador Casa Canela.",
+  "lang": "es-PE",
+  "start_url": "/?app=1",
+  "scope": "/",
+  "id": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#3B2418",
+  "theme_color": "#3B2418",
+  "categories": ["business", "food", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Producción de hoy", "url": "/#produccion", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Compras", "url": "/#compras", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

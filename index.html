@@ -2,9 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Casa Canela · Planificador</title>
 <link rel="icon" href="logo-icono.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#3B2418">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Casa Canela">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
 <style>
@@ -85,6 +92,53 @@ pre{white-space:pre-wrap;font-size:13px;background:var(--arcilla);padding:12px;b
 @media(max-width:600px){.g4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr;gap:6px}.flow div,.flow div:first-child{clip-path:none;border-radius:10px;padding-left:14px}
  table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:8em;margin-inline-start:-8.5em;color:var(--mute)}.stack td:empty{display:none}}
 @media print{aside,.controls,.tabs,button{display:none!important}.app{display:block}.card{break-inside:avoid}}
+
+/* paleta de gráficos validada (daltonismo y contraste) */
+:root{--c-real:light-dark(#A8552B,#B25A30);--c-proj:light-dark(#D69A3A,#B99A45)}
+.lead{margin:4px 0 0;font-size:15px}.lead b{font-family:Lora,serif;font-size:17px}
+.legend .tick{display:inline-block;width:16px;height:0;border-top:2px solid var(--ink);vertical-align:middle;margin-right:6px}
+.dot.hatch{background-image:repeating-linear-gradient(45deg,transparent 0 3px,rgba(255,255,255,.55) 3px 5px)!important}
+.tip{position:absolute;pointer-events:none;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:3;min-width:190px}
+.tip b{font-family:Lora,serif}.tip .r{display:flex;justify-content:space-between;gap:14px}
+details.more{margin-top:8px}details.more summary{cursor:pointer;color:var(--canela);font-weight:500;min-height:36px;display:flex;align-items:center}
+.todo{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px;margin-top:10px}
+.todo a{display:flex;gap:10px;align-items:flex-start;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--bg);min-height:44px}
+.todo a:hover{border-color:var(--canela)}.todo .ic{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px}
+.todo .ok .ic{background:#E3EDD8;color:#3D5A2A}.todo .warn .ic{background:#F7E6C4;color:#7A520F}.todo .bad .ic{background:#F5D9D3;color:#8A2E21}
+.todo b{display:block}.todo small{color:var(--mute);display:block;line-height:1.35;margin-top:2px}
+/* calendario */
+.cal{position:relative;display:flex;flex-direction:column;gap:4px}.cal-lab{font-size:13px;color:var(--mute)}
+.cal-btn{display:inline-flex;align-items:center;gap:8px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-height:44px;font-weight:500;white-space:nowrap}
+.cal-btn svg{width:18px;height:18px;color:var(--canela)}.cal-btn:hover{border-color:var(--canela)}
+.cal-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:30;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.18);display:flex;gap:10px;padding:12px;max-width:min(780px,calc(100vw - 24px))}
+.cal-m{flex:none}
+.cal-pop[hidden]{display:none!important}
+.cal-pre{display:flex;flex-direction:column;gap:4px;min-width:140px;border-right:1px solid var(--line);padding-right:10px}
+.cal-pre button{background:transparent;color:var(--ink);border:0;text-align:left;padding:7px 9px;border-radius:8px;min-height:36px;font-weight:500}
+.cal-pre button:hover,.cal-pre button.on{background:var(--arcilla)}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.cal-nav button{background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:8px;width:36px;height:36px;font-size:20px;line-height:1;padding:0}
+.cal-ms{display:flex;gap:16px}.cal-mt{font-family:Lora,serif;font-weight:600;text-align:center;margin-bottom:4px;text-transform:capitalize}
+.cal-g{display:grid;grid-template-columns:repeat(7,36px);gap:2px 0}.cal-dw{font-size:11px;color:var(--mute);text-align:center}
+.cal-d{height:36px;border:0;background:transparent;color:var(--ink);font-weight:500;padding:0;border-radius:0;position:relative;min-height:0}
+.cal-d:hover{outline:2px solid var(--canela);outline-offset:-2px;border-radius:8px}
+.cal-d.in{background:color-mix(in srgb,var(--canela) 16%,transparent)}
+.cal-d.ini,.cal-d.fin{background:var(--canela);color:#fff;border-radius:8px}
+.cal-d.real{font-weight:700}.cal-d.fut{color:var(--mute)}.cal-d.ini.fut,.cal-d.fin.fut{color:#fff}
+.cal-d.cev::after{content:"";position:absolute;left:50%;bottom:4px;width:5px;height:5px;margin-left:-2.5px;border-radius:50%;background:var(--miel)}
+.cal-d.hoy{box-shadow:inset 0 0 0 1px var(--ink);border-radius:8px}
+.cal-d:disabled{opacity:.3}
+.cal-leg{font-size:12px;color:var(--mute);margin-top:8px;display:flex;gap:12px;flex-wrap:wrap}
+@media(max-width:700px){.cal-pop{flex-direction:column;left:auto;right:auto;position:fixed;inset:auto 8px 8px 8px;max-width:none;max-height:85vh;overflow:auto}.cal-pre{flex-direction:row;flex-wrap:wrap;border-right:0;border-bottom:1px solid var(--line);padding:0 0 8px}.cal-ms>.cal-m+.cal-m{display:none}.cal-g{grid-template-columns:repeat(7,1fr)}.cal-d{height:42px}}
+/* producción: guardar todo */
+.save-bar{position:sticky;bottom:0;display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--paper);border-top:1px solid var(--line);padding:10px 0 2px;margin-top:8px}
+.save-all{font-weight:700}.save-all.dirty{box-shadow:0 0 0 3px color-mix(in srgb,var(--miel) 50%,transparent)}
+tr.dirty td:first-child{box-shadow:inset 3px 0 0 var(--miel)}
+.install{background:var(--miel);color:var(--cacao);border:0;border-radius:10px;padding:8px 12px;font-weight:700;min-height:40px}
+@media(max-width:900px){.install{display:none}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:700px){.al table{display:block;overflow-x:auto;max-width:100%;font-size:12.5px}.al td{white-space:normal!important}}
+@media(max-width:900px){aside .userbox{display:flex!important;flex-direction:row;align-items:center;flex-wrap:nowrap;gap:8px;font-size:12px}aside .userbox #corte{display:none}aside .userbox button{min-height:32px;margin-left:auto;width:auto}}
 </style>
 
 <style>
@@ -99,7 +153,9 @@ pre{white-space:pre-wrap;font-size:13px;background:var(--arcilla);padding:12px;b
 .userbox button{background:transparent;border:1px solid #ffffff44;color:var(--miga);min-height:36px;padding:4px 10px;font-size:13px}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:#3B241866;z-index:15;color:#fff;font-family:Lora,serif;font-size:22px}
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--arcilla)}
-.ok-b{background:#E3EDD8;color:#3D5A2A}.warn-b{background:#F7E6C4;color:#7A520F}
+.ok-b{background:#E3EDD8;color:#3D5A2A}.warn-b{background:#F7E6C4;color:#7A520F}.bad-b{background:#F5D9D3;color:#8A2E21}.info-b{background:#E6E0F0;color:#4A3B6B}
+.ev{display:block;font-size:11px;font-weight:700;color:var(--miel)}td.evd{background:color-mix(in srgb,var(--miel) 14%,transparent)}
+.btn-sm{min-height:34px!important;padding:4px 11px!important;font-size:13px!important}
 iframe.prev{width:100%;height:560px;border:1px solid var(--line);border-radius:12px;background:#fff}
 code.k{background:var(--arcilla);padding:3px 8px;border-radius:6px;font-size:13px;word-break:break-all}
 .endp td:first-child{white-space:nowrap}
@@ -116,6 +172,9 @@ input.xs{width:80px;min-height:38px;padding:5px 8px;text-align:right}
 .diff-neg{color:var(--bad);font-weight:700}.diff-pos{color:var(--ok);font-weight:700}
 details summary{min-height:32px}
 .btn.ghost{background:transparent;color:var(--canela);cursor:pointer}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:700px){.al table{display:block;overflow-x:auto;max-width:100%;font-size:12.5px}.al td{white-space:normal!important}}
+@media(max-width:900px){aside .userbox{display:flex!important;flex-direction:row;align-items:center;flex-wrap:nowrap;gap:8px;font-size:12px}aside .userbox #corte{display:none}aside .userbox button{min-height:32px;margin-left:auto;width:auto}}
 </style>
 </head>
 <body>
@@ -147,6 +206,7 @@ details summary{min-height:32px}
 <path d="M103.0,125.0 L103.2,125.3 L103.5,125.7 L103.6,126.2 L103.7,126.7 L103.8,127.2 L103.7,127.7 L103.6,128.3 L103.4,128.8 L103.2,129.4 L102.8,129.9 L102.4,130.4 L101.9,130.9 L101.3,131.3 L100.7,131.7 L100.0,132.0 L99.2,132.2 L98.4,132.4 L97.6,132.4 L96.7,132.4 L95.8,132.2 L94.9,132.0 L94.1,131.6 L93.2,131.1 L92.4,130.5 L91.6,129.8 L90.9,129.0 L90.3,128.2 L89.8,127.2 L89.3,126.1 L89.0,125.0 L88.8,123.8 L88.7,122.6 L88.8,121.4 L89.0,120.1 L89.3,118.8 L89.8,117.6 L90.4,116.4 L91.2,115.2 L92.1,114.2 L93.2,113.2 L94.3,112.3 L95.6,111.5 L97.0,110.8 L98.5,110.3 L100.0,110.0 L101.6,109.8 L103.2,109.8 L104.9,110.0 L106.5,110.3 L108.2,110.9 L109.8,111.6 L111.3,112.5 L112.7,113.5 L114.1,114.8 L115.3,116.2 L116.4,117.7 L117.3,119.4 L118.1,121.2 L118.6,123.0 L119.0,125.0 L119.2,127.0 L119.1,129.1 L118.8,131.1 L118.3,133.2 L117.6,135.2 L116.7,137.1 L115.5,139.0 L114.1,140.7 L112.6,142.3 L110.8,143.8 L108.9,145.0 L106.9,146.1 L104.7,147.0 L102.4,147.6 L100.0,148.0 L97.6,148.1 L95.1,148.0 L92.6,147.6 L90.2,147.0 L87.8,146.1 L85.5,144.9 L83.4,143.5 L81.3,141.8 L79.5,139.9 L77.8,137.8 L76.3,135.5 L75.1,133.1 L74.1,130.5 L73.4,127.8 L73.0,125.0 L72.9,122.1 L73.1,119.3 L73.6,116.4 L74.4,113.6 L75.5,110.8 L76.9,108.2 L78.5,105.7 L80.5,103.3 L82.7,101.2 L85.2,99.3 L87.8,97.7 L90.7,96.3 L93.7,95.2 L96.8,94.4 L100.0,94.0 L103.3,93.9 L106.6,94.2 L109.8,94.8 L113.0,95.7 L116.2,97.0 L119.2,98.6 L122.0,100.6 L124.6,102.8 L127.0,105.4 L129.2,108.2 L131.0,111.2 L132.5,114.4 L133.7,117.8 L134.5,121.4 L135.0,125.0 L135.1,128.7 L134.8,132.4 L134.0,136.1 L132.9,139.7 L131.5,143.2 L129.6,146.5 L127.4,149.7 L124.8,152.6 L122.0,155.3 L118.8,157.6 L115.4,159.7 L111.8,161.3 L108.0,162.6 L104.0,163.5 L100.0,164.0 L95.9,164.1 L91.8,163.7 L87.7,162.9 L83.7,161.6 L79.8,159.9 L76.1,157.8 L72.7,155.4 L69.4,152.5 L66.5,149.3 L63.9,145.8 L61.7,142.1 L59.9,138.0 L58.5,133.8 L57.5,129.5 L57.0,125.0 L57.0,120.5 L57.4,115.9 L58.3,111.5 L59.7,107.1 L61.6,102.8 L63.9,98.8 L66.7,95.0 L69.8,91.5 L73.3,88.3 L77.2,85.5 L81.3,83.0 L85.7,81.1 L90.3,79.5 L95.1,78.5 L100.0,78.0 L104.9,78.0 L109.9,78.5 L114.8,79.5 L119.6,81.1 L124.2,83.1 L128.6,85.7 L132.7,88.7 L136.5,92.1 L140.0,96.0 L143.0,100.2 L145.6,104.7 L147.7,109.5 L149.4,114.5 L150.5,119.7 L151.0,125.0" fill="none" stroke="#A8552B" stroke-width="9" stroke-linecap="round"/>
 <path d="M 62,116 C 74,106 86,126 100,114 C 112,104 124,122 138,112" fill="none" stroke="#FFF8EE" stroke-width="6" stroke-linecap="round"/></svg><div><b>Casa Canela</b><small>Planificador de obrador</small></div></div>
   <nav id="nav"></nav>
+  <button id="install" class="install" hidden>Instalar app en este equipo</button>
   <div class="side-foot userbox"><span id="u-name"></span><span id="corte"></span><button id="logout">Cerrar sesión</button></div>
 </aside>
 <main>
@@ -154,21 +214,23 @@ details summary{min-height:32px}
 <section class="view" id="v-resumen">
   <div class="head"><div><h1 id="r-title">Resumen</h1><p id="r-sub"></p></div></div>
   <div class="grid g4" id="r-kpis"></div>
-  <div class="card"><div class="head" style="margin:0 0 4px"><h3>Venta semanal (S/): 12 semanas reales y la próxima proyectada</h3><div class="legend"><span><i class="dot" style="background:var(--cacao)"></i>Barranco</span><span><i class="dot" style="background:var(--canela)"></i>San Isidro</span><span><i class="dot" style="background:var(--miel)"></i>Semana proyectada</span></div></div>
-    <p class="note" style="margin:0 0 6px">Cada barra suma la venta de lunes a domingo de los dos locales; el número encima es el total de la semana. La última barra, en dorado, es lo que el sistema espera vender la próxima semana.</p>
-    <div class="fig" id="r-chart"><svg></svg></div></div>
+  <div class="card"><div class="head" style="margin:0 0 4px"><div><h3>Para hoy</h3><p class="note" style="margin:4px 0 0" id="r-hoyd"></p></div></div><div id="r-hoy" class="todo"></div></div>
+  <div class="card"><div class="head" style="margin:0 0 2px"><div><h3>¿Acierta el sistema? Venta real vs. lo que proyectó antes</h3><p class="lead" id="r-lead"></p></div>
+    <div class="legend"><span><i class="dot" style="background:var(--c-real)"></i>Venta real de la semana</span><span><i class="tick"></i>Lo que el sistema proyectó antes</span><span><i class="dot hatch" style="background:var(--c-proj)"></i>Próxima semana (proyección)</span></div></div>
+    <div class="fig" id="r-chart"><svg role="img" aria-label="Venta semanal real comparada con la proyección"></svg><div class="tip" hidden></div></div>
+    <details class="more"><summary>Ver la tabla</summary><div class="scroll"><table id="r-ctab"></table></div></details></div>
   <div class="card"><h3>Alertas y plan de acción</h3><p class="note" style="margin:4px 0 12px">Cada alerta se calcula con los datos cargados y trae qué hacer, quién lo hace y para cuándo.</p><div id="r-alerts" class="alerts"></div></div>
-  <div class="card" id="r-acc"></div>
   <div class="grid g2">
     <div class="card"><h3>Lo que más se venderá la próxima semana</h3><div class="scroll"><table id="r-top"></table></div></div>
-    <div class="card"><h3>Cómo trabaja el sistema</h3><ol class="steps"><li><b>Ventas:</b> llegan cada noche desde la hoja del POS con Make.</li><li><b>Proyección:</b> promedio ponderado de los 4 mismos días anteriores, sin días atípicos.</li><li><b>Producción:</b> la orden del día siguiente llega por correo al obrador a las 6 p. m.; el obrador registra lo producido con foto.</li><li><b>Inventario y compras:</b> el conteo físico se sube en Excel y los pedidos salen a cada proveedor los domingos.</li><li><b>Control:</b> el reporte semanal compara proyectado vs. real, cumplimiento de producción y food cost.</li></ol></div>
+    <div class="card"><h3>Dónde se está yendo la plata</h3><p class="note" style="margin:4px 0 10px" id="r-plata-n"></p><div class="scroll"><table id="r-plata"></table></div></div>
   </div>
+  <div class="card" id="r-acc"></div>
 </section>
 
 <section class="view" id="v-ventas">
   <div class="head"><div><h1>Ventas históricas</h1><p id="h-sub">Lo vendido cada día por local, canal y producto.</p></div></div>
   <div class="card controls">
-    <label class="f">Semana<select id="h-sem"></select></label>
+    <div id="h-rng"></div>
     <label class="f">Local<select id="h-local"></select></label>
     <label class="f">Canal<select id="h-canal"></select></label>
     <label class="f">Producto<select id="h-prod"></select></label>
@@ -194,27 +256,31 @@ details summary{min-height:32px}
 
 <section class="view" id="v-proyeccion">
   <div class="head"><div><h1>Proyección de ventas</h1><p id="p-sub"></p></div></div>
-  <div class="tabs" id="p-mode"><button class="tab on" data-pm="sem">Por semana</button><button class="tab" data-pm="mes">Por mes</button></div>
-  <div class="card controls">
-    <label class="f" id="p-semw">Semana<select id="p-sem"></select></label>
-    <label class="f" id="p-mesw" hidden>Mes<select id="p-mes"></select></label>
-    <label class="f">Local<select id="p-local"></select></label>
+    <div class="card controls">
+    <div id="p-rng"></div>
+        <label class="f">Local<select id="p-local"></select></label>
     <label class="f">Canal<select id="p-canal"></select></label>
     <label class="f">Método<select id="p-met"><option value="w">Ponderado 40/30/20/10</option><option value="s">Promedio simple</option></select></label>
-    <label class="f" id="p-ajw" hidden>Ajuste por temporada<select id="p-aj"><option value="0">Sin ajuste</option><option value="0.05">+5 %</option><option value="0.1">+10 %</option><option value="0.15">+15 % (campaña navideña)</option><option value="0.2">+20 %</option><option value="-0.1">−10 %</option></select></label>
+    <label class="f" id="p-ajw">Ajuste por temporada<select id="p-aj"><option value="0">Sin ajuste</option><option value="0.05">+5 %</option><option value="0.1">+10 %</option><option value="0.15">+15 % (campaña navideña)</option><option value="0.2">+20 %</option><option value="-0.1">−10 %</option></select></label>
   </div>
   <div class="grid g4" id="p-kpis"></div>
-  <div class="card" id="p-chartc" hidden><h3 id="p-ctitle"></h3><div class="legend" style="margin:6px 0"><span><i class="dot" style="background:var(--cacao)"></i>Venta real</span><span><i class="dot" style="background:var(--miel)"></i>Proyectado</span></div><div class="fig" id="p-chart"><svg></svg></div></div>
+  <div class="card" id="p-chartc"><h3 id="p-ctitle"></h3><div class="legend" style="margin:6px 0"><span><i class="dot" style="background:var(--cacao)"></i>Venta real</span><span><i class="dot" style="background:var(--miel)"></i>Proyectado</span></div><div class="fig" id="p-chart"><svg></svg></div></div>
   <div class="card"><p class="note" id="p-tnote">Unidades proyectadas por día. Toca un número para ver de dónde sale.</p><div class="scroll"><table id="p-table"></table></div><div id="p-exp"></div></div>
+  <div class="card"><h3>Calendario de eventos</h3><p class="note" style="margin:4px 0 10px">Feriados y campañas que ya se conocen. El efecto se aplica a la proyección de ese día (y a la producción y compras que salen de ella). Cuando la fecha pasa, el día se marca solo como atípico para que no distorsione las semanas siguientes.</p>
+    <div class="scroll"><table id="e-table"></table></div>
+    <div class="controls" id="e-form" style="margin-top:12px"><label class="f">Fecha<input type="date" id="e-fecha"></label><label class="f">Evento<input type="text" id="e-nom" placeholder="Ej. Día de la Madre"></label><label class="f">Local<select id="e-local"></select></label><label class="f">Categoría<select id="e-cat"></select></label><label class="f">Efecto<select id="e-fac"><option value="0.5">−50 %</option><option value="0.7">−30 %</option><option value="0.8">−20 %</option><option value="0.9">−10 %</option><option value="1.1">+10 %</option><option value="1.2" selected>+20 %</option><option value="1.3">+30 %</option><option value="1.5">+50 %</option><option value="1.8">+80 %</option><option value="2">+100 %</option></select></label><button id="e-add">Agregar evento</button></div></div>
 </section>
 
 <section class="view" id="v-produccion">
   <div class="head"><div><h1>Órdenes de producción</h1><p>El obrador central produce para los dos locales. Las tortas y bandejas se hornean enteras y luego se porcionan.</p></div>
-    <div class="controls"><label class="f">Semana<select id="o-sem"></select></label><label class="f">Stock de seguridad<select id="o-seg"><option value="0">0 %</option><option value="0.05">5 %</option><option value="0.1">10 %</option><option value="0.15">15 %</option></select></label><button class="ghost" id="o-print">Imprimir</button><button class="ghost" id="o-copy">Copiar orden</button></div></div>
+    <div class="controls"><div id="o-dia"></div><label class="f">Stock de seguridad<select id="o-seg"><option value="0">0 %</option><option value="0.05">5 %</option><option value="0.1">10 %</option><option value="0.15">15 %</option></select></label><button class="ghost" id="o-print">Imprimir</button><button class="ghost" id="o-copy">Copiar orden</button></div></div>
   <div class="tabs" id="o-tabs"></div>
   <div class="grid g4" id="o-kpis"></div>
   <div class="card"><h3 id="o-t1">Productos terminados</h3><p class="note">El stock de seguridad es un porcentaje extra sobre lo proyectado para no quedarse sin producto si el día vende más de lo normal.</p><div class="scroll"><table id="o-prod" class="stack"></table></div></div>
-  <div class="card" id="o-regc"><h3 id="o-t3">Registro de producción real</h3><p class="note">Al terminar, el obrador anota cuánto produjo, cuánto sobró al cierre y sube una foto. Queda guardado con fecha, hora y usuario.</p><div class="scroll"><table id="o-reg"></table></div></div>
+  <div class="card" id="o-tdc"><h3 id="o-t4">Tandas del día</h3><p class="note">Para no hornear todo de madrugada y que sobre al cierre: cada producto se reparte en tres horneadas según cómo se vende por hora en cada local (últimas 4 semanas, separando lunes a viernes de fin de semana). Tortas, pies y quiches salen enteros en la primera tanda.</p>
+    <div class="grid g2" style="align-items:start"><div class="scroll"><table id="o-td"></table></div><div><div class="controls" style="margin-bottom:6px"><label class="f">Ver venta por hora de<select id="o-hprod"></select></label></div><div class="legend" style="margin:0 0 4px"><span><i class="dot" style="background:var(--cacao)"></i>Barranco</span><span><i class="dot" style="background:var(--canela)"></i>San Isidro</span></div><div class="fig" id="o-hchart" style="min-height:240px"><svg></svg></div><p class="note" id="o-hnote"></p></div></div></div>
+  <div class="card" id="o-regc"><div class="head" style="margin:0 0 6px"><div><h3 id="o-t3">Registro de producción real</h3><p class="note" style="margin:4px 0 0">Anota solo lo que cambió: lo que dejes vacío se guarda como producido completo y sin sobrante. Toma las fotos y al final toca <b>Guardar todo</b>; queda con fecha, hora y usuario.</p></div><button id="o-saveall" class="save-all">Guardar todo</button></div><div class="scroll"><table id="o-reg" class="stack"></table></div>
+    <div class="save-bar"><span id="o-pend" class="note"></span><button id="o-saveall2" class="save-all">Guardar todo</button></div></div>
   <div class="card"><h3 id="o-t2">Recetas base a preparar</h3><p class="note">Toca una receta para ver los ingredientes ya escalados.</p><div class="scroll"><table id="o-base"></table></div><div id="o-exp"></div></div>
 </section>
 
@@ -229,16 +295,28 @@ details summary{min-height:32px}
 </section>
 
 <section class="view" id="v-compras">
-  <div class="head"><div><h1>Lista de compras</h1><p id="c-sub"></p></div><div class="controls"><label class="f">Semana<select id="c-sem"></select></label><button class="ghost" id="c-copy">Copiar pedidos</button></div></div>
+  <div class="head"><div><h1>Lista de compras</h1><p id="c-sub"></p></div><div class="controls"><div id="c-rng"></div><button class="ghost" id="c-copy">Copiar pedidos</button></div></div>
   <div class="grid g4" id="c-kpis"></div>
+  <div class="card"><div class="head" style="margin:0 0 6px"><div><h3>Aprobación de pedidos</h3><p class="note" style="margin:4px 0 0">El sistema sugiere el pedido; la persona de compras lo revisa y lo aprueba con un clic. Make lo envía al proveedor esa misma tarde (6 p. m.) y, cuando llega la mercadería, “Recibido” suma el stock solo.</p></div><button id="c-all">Aprobar todos los pendientes</button></div><div class="scroll"><table id="c-ped"></table></div></div>
   <div class="card"><p class="note" id="c-note"></p><div class="scroll"><table id="c-table"></table></div></div>
 </section>
 
 <section class="view" id="v-costos">
   <div class="head"><div><h1>Costos y food cost</h1><p>Costo teórico de cada producto a partir de sus recetas. Food cost = costo ÷ precio sin IGV (18 %). No incluye empaques ni la comisión de Rappi.</p></div></div>
+  <div class="card"><div class="head" style="margin:0 0 6px"><div><h3>Food cost real vs. teórico</h3><p class="note" style="margin:4px 0 0" id="f-sub"></p></div><label class="f">Periodo<select id="f-per"></select></label></div>
+    <div class="grid g4" id="f-kpis" style="margin:10px 0"></div><div id="f-exp"></div>
+    <div class="scroll"><table id="f-table"></table></div><p class="note">Consumo real = inventario inicial + compras recibidas − inventario final. Consumo teórico = lo que indican las recetas para lo que se vendió. Todo sale del sistema: conteos subidos en Inventario, pedidos marcados como recibidos en Compras y ventas del POS.</p></div>
   <div class="grid g4" id="k-kpis"></div>
   <div class="card"><div class="legend" style="margin-bottom:8px"><span><i class="dot" style="background:var(--ok)"></i>Hasta 28 %</span><span><i class="dot" style="background:var(--warn)"></i>28 % a 33 %</span><span><i class="dot" style="background:var(--bad)"></i>Más de 33 %</span></div><div class="scroll"><table id="k-table"></table></div><div id="k-exp"></div></div>
   <div class="card"><h3>Costo de recetas base</h3><div class="scroll"><table id="k-bases"></table></div></div>
+</section>
+
+<section class="view" id="v-indicadores">
+  <div class="head"><div><h1>Indicadores por persona</h1><p>Cómo está cumpliendo cada responsable, con lo que registra en el sistema. Sirve para reconocer y para corregir a tiempo, no para castigar.</p></div><div class="controls"><div id="x-rng"></div></div></div>
+  <div class="grid g4" id="x-kpis"></div>
+  <div class="card"><h3>Obrador</h3><p class="note" style="margin:4px 0 10px">Metas: cumplimiento ≥ 98 %, sobrante ≤ 5 % de lo producido, foto en todos los registros y registro antes de las 10 a. m. del día de venta.</p><div class="scroll"><table id="x-obr"></table></div></div>
+  <div class="card"><h3>Compras e inventario</h3><p class="note" style="margin:4px 0 10px">Metas: pedidos aprobados antes del lunes, recepción registrada el mismo día y exactitud del conteo ≥ 97 % (diferencia contra el sistema, a costo).</p><div class="scroll"><table id="x-com"></table></div></div>
+  <div class="card"><h3>Qué hacer con cada resultado</h3><div id="x-plan" class="alerts"></div></div>
 </section>
 
 <section class="view" id="v-recetario">
