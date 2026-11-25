@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: casa-canela
+    runtime: static
+    buildCommand: ""
+    staticPublishPath: .

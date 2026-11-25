@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Casa Canela · Planificador</title>
+<link rel="icon" href="logo-icono.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: obrador ordenado, cálido y exacto — una herramienta de trabajo con alma artesanal
+   IDEA: la libreta de pedidos del obrador: de lo que se venderá a lo que se hornea y se compra
+   PICTURE: el flujo ventas → proyección → producción → compras y el gráfico semanal
+   COLOUR and TYPE: cacao (dominante en la barra), canela (acento), miel (destacados); Lora + DM Sans
+   LAYOUT: barra lateral fija con secciones; contenido en tarjetas sobrias, tablas alineadas a la derecha */
+:root{color-scheme:light dark;
+--bg:light-dark(#FBF7F1,#1E140F);--paper:light-dark(#FFFFFF,#2A1D16);--ink:light-dark(#2B1A12,#F3E9DC);--mute:light-dark(#7A6558,#BFA898);
+--line:light-dark(#EADFD2,#3E2C22);--cacao:#3B2418;--canela:light-dark(#A8552B,#E08A57);--miel:light-dark(#B97F1F,#E2AE4E);--miga:#F5EBDD;
+--arcilla:light-dark(#F1E2D2,#3A271D);--ok:light-dark(#4F6B3A,#9CC07E);--warn:light-dark(#B97F1F,#E2AE4E);--bad:light-dark(#A63A2B,#F08A78)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:15.5px/1.5 "DM Sans",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:Lora,Georgia,serif;margin:0;line-height:1.1;text-wrap:balance}
+h1{font-size:clamp(26px,3.2vw,38px)}h2{font-size:22px}h3{font-size:17px}
+.app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+aside{background:var(--cacao);color:var(--miga);padding:22px 16px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;align-items:center;gap:10px}.brand svg{width:58px;height:58px;flex:none}
+.brand b{font-family:Lora,serif;font-size:21px;display:block}.brand small{opacity:.75;font-size:13px}
+nav{display:flex;flex-direction:column;gap:3px}
+nav a{color:var(--miga);text-decoration:none;padding:10px 12px;border-radius:10px;font-weight:500;display:flex;gap:10px;align-items:center;min-height:44px}
+nav a:hover{background:#ffffff14}nav a.on{background:var(--miga);color:var(--cacao)}
+nav a i{font-style:normal;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:12px;background:#ffffff1c;font-weight:700}
+nav a.on i{background:#A8552B;color:#fff}
+.side-foot{margin-top:auto;font-size:12.5px;opacity:.75;line-height:1.4}
+main{padding:clamp(18px,3vw,40px);max-width:1320px;width:100%}
+.view{display:none}.view.on{display:block;animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.view.on{animation:none}}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.head p{margin:6px 0 0;color:var(--mute);max-width:70ch}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kpi .lab{color:var(--mute);font-size:13.5px}.kpi .num{font-family:Lora,serif;font-size:clamp(24px,2.4vw,32px);font-weight:700;white-space:nowrap}
+.kpi .sub{font-size:13px;color:var(--mute)}.up{color:var(--ok);font-weight:700}.dn{color:var(--bad);font-weight:700}
+.flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:6px}
+.flow div{padding:14px 18px 14px 14px;background:var(--arcilla);position:relative;clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%,14px 50%)}
+.flow div:first-child{clip-path:polygon(0 0,calc(100% - 14px) 0,100% 50%,calc(100% - 14px) 100%,0 100%);border-radius:10px 0 0 10px}
+.flow b{display:block;font-family:Lora,serif;font-size:16px;color:var(--canela)}.flow span{font-size:13px;color:var(--mute)}
+.flow div{padding-left:26px}
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end}
+label.f{display:flex;flex-direction:column;font-size:12.5px;color:var(--mute);gap:4px}
+select,input[type=number],input[type=date],input[type=text],input[type=password]{font:inherit;font-size:16px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-height:44px}
+input.sm{width:96px;min-height:38px;padding:5px 8px;text-align:right}
+button,.btn{font:inherit;font-weight:600;border:1px solid var(--canela);background:var(--canela);color:#fff;border-radius:10px;padding:9px 14px;min-height:44px;cursor:pointer}
+button.ghost{background:transparent;color:var(--canela)}
+button:focus-visible,select:focus-visible,input:focus-visible,nav a:focus-visible,.tab:focus-visible{outline:3px solid var(--miel);outline-offset:2px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.tab{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:7px 14px;min-height:40px;font-weight:500}
+.tab.on{background:var(--cacao);color:var(--miga);border-color:var(--cacao)}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th{font-weight:600;color:var(--mute);font-size:12.5px;text-align:left;border-bottom:1px solid var(--line);padding:8px 8px;white-space:nowrap}
+td{border-bottom:1px solid var(--line);padding:8px 8px;vertical-align:top}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--arcilla)}
+tr.tot td{font-weight:700;border-top:2px solid var(--ink)}
+tr.grp td{background:var(--arcilla);font-weight:700;font-family:Lora,serif}
+.pill{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--arcilla);color:var(--ink);white-space:nowrap}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.bar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;min-width:60px}.bar>span{display:block;height:100%}
+.note{font-size:13px;color:var(--mute)}
+.fig{position:relative;min-height:300px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
+.explain{background:var(--arcilla);border-radius:12px;padding:14px;margin-top:10px}
+.explain table{font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;gap:8px;align-items:center;background:var(--paper);font-size:14px}
+.sw{border-radius:12px;overflow:hidden;border:1px solid var(--line)}.sw div:first-child{height:84px}.sw div:last-child{padding:10px;font-size:13.5px;background:var(--paper)}
+pre{white-space:pre-wrap;font-size:13px;background:var(--arcilla);padding:12px;border-radius:10px;max-height:260px;overflow:auto}
+.scroll{overflow-x:auto}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--cacao);color:var(--miga);padding:12px 16px;border-radius:12px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+@media(max-width:1000px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside{position:sticky;height:auto;padding:10px 12px;gap:8px;z-index:5}
+ .brand svg{width:40px;height:40px}.brand small,.side-foot{display:none}nav{flex-direction:row;overflow-x:auto}nav a{flex:none}.g2{grid-template-columns:1fr}}
+@media(max-width:600px){.g4{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr;gap:6px}.flow div,.flow div:first-child{clip-path:none;border-radius:10px;padding-left:14px}
+ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px}.stack td{display:flow-root;border:0;padding:3px 0;padding-inline-start:8.5em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:8em;margin-inline-start:-8.5em;color:var(--mute)}.stack td:empty{display:none}}
+@media print{aside,.controls,.tabs,button{display:none!important}.app{display:block}.card{break-inside:avoid}}
+</style>
+
+<style>
+[hidden]{display:none!important}
+.login{position:fixed;inset:0;background:var(--cacao);display:grid;place-items:center;z-index:20;padding:20px}
+.login form{background:var(--paper);color:var(--ink);border-radius:20px;padding:32px;width:min(400px,100%);display:flex;flex-direction:column;gap:14px;box-shadow:0 30px 60px #0005}
+.login svg{width:120px;height:146px;margin:0 auto}
+.login h1{text-align:center;font-size:26px}
+.login p.err{color:var(--bad);margin:0;min-height:1.4em;font-size:14px}
+.login input{width:100%}
+.userbox{font-size:13px;line-height:1.4;display:flex;flex-direction:column;gap:6px}
+.userbox button{background:transparent;border:1px solid #ffffff44;color:var(--miga);min-height:36px;padding:4px 10px;font-size:13px}
+.loading{position:fixed;inset:0;display:grid;place-items:center;background:#3B241866;z-index:15;color:#fff;font-family:Lora,serif;font-size:22px}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--arcilla)}
+.ok-b{background:#E3EDD8;color:#3D5A2A}.warn-b{background:#F7E6C4;color:#7A520F}
+iframe.prev{width:100%;height:560px;border:1px solid var(--line);border-radius:12px;background:#fff}
+code.k{background:var(--arcilla);padding:3px 8px;border-radius:6px;font-size:13px;word-break:break-all}
+.endp td:first-child{white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="login" id="login" hidden>
+  <form id="login-f" autocomplete="on">
+    <svg viewBox="50 20 300 370" aria-hidden="true"><path d="M 70,370 L 70,170 A 130,130 0 0 1 330,170 L 330,370 Z" fill="#3B2418"/>
+<path d="M 86,356 L 86,172 A 114,114 0 0 1 314,172 L 314,356 Z" fill="none" stroke="#D69A3A" stroke-width="2"/>
+<circle cx="200" cy="170" r="62" fill="#D69A3A"/>
+<path d="M204.0,170.0 L204.3,170.4 L204.5,170.9 L204.6,171.5 L204.7,172.1 L204.7,172.7 L204.6,173.4 L204.4,174.0 L204.2,174.7 L203.8,175.3 L203.4,175.9 L202.9,176.5 L202.3,177.0 L201.6,177.5 L200.8,177.9 L200.0,178.2 L199.1,178.5 L198.2,178.6 L197.2,178.7 L196.2,178.6 L195.2,178.4 L194.2,178.0 L193.2,177.6 L192.2,177.0 L191.3,176.3 L190.4,175.5 L189.6,174.6 L188.9,173.6 L188.3,172.5 L187.9,171.3 L187.5,170.0 L187.3,168.7 L187.2,167.3 L187.3,165.9 L187.5,164.5 L187.9,163.0 L188.5,161.7 L189.2,160.3 L190.1,159.0 L191.2,157.8 L192.3,156.7 L193.6,155.7 L195.1,154.9 L196.6,154.2 L198.3,153.6 L200.0,153.2 L201.8,153.1 L203.6,153.1 L205.4,153.3 L207.3,153.7 L209.1,154.3 L210.8,155.1 L212.5,156.1 L214.1,157.3 L215.6,158.7 L217.0,160.2 L218.1,161.9 L219.2,163.8 L220.0,165.8 L220.6,167.8 L221.0,170.0 L221.2,172.2 L221.1,174.5 L220.8,176.8 L220.2,179.0 L219.4,181.2 L218.4,183.3 L217.1,185.4 L215.6,187.3 L213.8,189.1 L211.9,190.6 L209.8,192.0 L207.5,193.2 L205.1,194.1 L202.6,194.8 L200.0,195.2 L197.3,195.4 L194.6,195.3 L191.9,194.8 L189.3,194.1 L186.7,193.1 L184.2,191.8 L181.8,190.2 L179.6,188.4 L177.5,186.3 L175.7,184.0 L174.1,181.5 L172.8,178.9 L171.7,176.0 L170.9,173.1 L170.5,170.0 L170.4,166.9 L170.6,163.7 L171.1,160.6 L172.0,157.5 L173.2,154.5 L174.8,151.7 L176.6,148.9 L178.7,146.4 L181.2,144.1 L183.8,142.0 L186.7,140.2 L189.8,138.7 L193.1,137.5 L196.5,136.7 L200.0,136.2 L203.6,136.2 L207.1,136.4 L210.7,137.1 L214.2,138.1 L217.6,139.5 L220.8,141.3 L223.9,143.4 L226.8,145.9 L229.4,148.7 L231.7,151.7 L233.7,155.0 L235.3,158.5 L236.6,162.2 L237.5,166.1 L238.0,170.0 L238.1,174.0 L237.7,178.0 L236.9,182.0 L235.8,185.9 L234.1,189.7 L232.1,193.3 L229.7,196.8 L226.9,199.9 L223.8,202.8 L220.4,205.4 L216.7,207.6 L212.8,209.4 L208.7,210.8 L204.4,211.7 L200.0,212.2 L195.6,212.3 L191.1,211.9 L186.7,211.0 L182.4,209.6 L178.2,207.8 L174.2,205.6 L170.4,202.9 L166.9,199.8 L163.8,196.3 L161.0,192.5 L158.6,188.5 L156.6,184.1 L155.1,179.6 L154.0,174.8 L153.5,170.0 L153.5,165.1 L154.0,160.2 L155.0,155.4 L156.5,150.6 L158.5,146.0 L161.0,141.7 L164.0,137.6 L167.4,133.8 L171.2,130.3 L175.3,127.3 L179.8,124.7 L184.6,122.5 L189.6,120.9 L194.7,119.8 L200.0,119.2 L205.3,119.2 L210.7,119.8 L215.9,120.9 L221.1,122.6 L226.1,124.8 L230.8,127.6 L235.3,130.8 L239.4,134.5 L243.1,138.7 L246.4,143.2 L249.2,148.1 L251.5,153.3 L253.2,158.7 L254.4,164.3 L255.0,170.0 L255.0,175.8 L254.4,181.6 L253.1,187.3 L251.3,192.8 L248.9,198.2 L245.9,203.3 L242.3,208.1 L238.3,212.6 L233.8,216.6 L228.9,220.1 L223.6,223.1 L218.0,225.5" fill="none" stroke="#A8552B" stroke-width="9" stroke-linecap="round"/>
+<path d="M 156,160 C 170,150 182,170 198,158 C 212,148 226,166 242,156" fill="none" stroke="#F5EBDD" stroke-width="6" stroke-linecap="round"/>
+<path d="M 172,138 C 184,130 194,146 208,136 C 216,131 222,138 228,134" fill="none" stroke="#F5EBDD" stroke-width="4.5" stroke-linecap="round"/>
+<ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(0 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(0 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(45 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(45 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(90 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(90 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(135 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(135 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(180 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(180 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(225 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(225 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(270 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(270 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(315 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(315 268 110)"/><circle cx="268" cy="110" r="1.8200000000000003" fill="#F5EBDD"/>
+<text x="200" y="278" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="44" font-weight="700" fill="#F5EBDD">Casa</text>
+<text x="200" y="322" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="44" font-weight="700" font-style="italic" fill="#D69A3A">Canela</text>
+<text x="200" y="348" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="12" letter-spacing="3" fill="#F5EBDD">CAFÉ · PASTELERÍA</text></svg>
+    <h1>Planificador de obrador</h1>
+    <label class="f">Usuario<input id="l-u" type="text" name="username" autocomplete="username" required></label>
+    <label class="f">Clave<input id="l-p" name="password" type="password" autocomplete="current-password" required></label>
+    <p class="err" id="l-err" role="alert"></p>
+    <button type="submit">Ingresar</button>
+    <p class="note" style="text-align:center;margin:0">Prototipo con datos ficticios · Casa Canela</p>
+  </form>
+</div>
+<div class="loading" id="loading" hidden>Cargando datos…</div>
+<div class="app" id="app" hidden>
+<aside>
+  <div class="brand"><svg viewBox="0 0 200 240" aria-hidden="true"><path d="M 20,230 L 20,100 A 80,80 0 0 1 180,100 L 180,230 Z" fill="#F5EBDD"/>
+<circle cx="100" cy="125" r="56" fill="#D69A3A"/>
+<path d="M103.0,125.0 L103.2,125.3 L103.5,125.7 L103.6,126.2 L103.7,126.7 L103.8,127.2 L103.7,127.7 L103.6,128.3 L103.4,128.8 L103.2,129.4 L102.8,129.9 L102.4,130.4 L101.9,130.9 L101.3,131.3 L100.7,131.7 L100.0,132.0 L99.2,132.2 L98.4,132.4 L97.6,132.4 L96.7,132.4 L95.8,132.2 L94.9,132.0 L94.1,131.6 L93.2,131.1 L92.4,130.5 L91.6,129.8 L90.9,129.0 L90.3,128.2 L89.8,127.2 L89.3,126.1 L89.0,125.0 L88.8,123.8 L88.7,122.6 L88.8,121.4 L89.0,120.1 L89.3,118.8 L89.8,117.6 L90.4,116.4 L91.2,115.2 L92.1,114.2 L93.2,113.2 L94.3,112.3 L95.6,111.5 L97.0,110.8 L98.5,110.3 L100.0,110.0 L101.6,109.8 L103.2,109.8 L104.9,110.0 L106.5,110.3 L108.2,110.9 L109.8,111.6 L111.3,112.5 L112.7,113.5 L114.1,114.8 L115.3,116.2 L116.4,117.7 L117.3,119.4 L118.1,121.2 L118.6,123.0 L119.0,125.0 L119.2,127.0 L119.1,129.1 L118.8,131.1 L118.3,133.2 L117.6,135.2 L116.7,137.1 L115.5,139.0 L114.1,140.7 L112.6,142.3 L110.8,143.8 L108.9,145.0 L106.9,146.1 L104.7,147.0 L102.4,147.6 L100.0,148.0 L97.6,148.1 L95.1,148.0 L92.6,147.6 L90.2,147.0 L87.8,146.1 L85.5,144.9 L83.4,143.5 L81.3,141.8 L79.5,139.9 L77.8,137.8 L76.3,135.5 L75.1,133.1 L74.1,130.5 L73.4,127.8 L73.0,125.0 L72.9,122.1 L73.1,119.3 L73.6,116.4 L74.4,113.6 L75.5,110.8 L76.9,108.2 L78.5,105.7 L80.5,103.3 L82.7,101.2 L85.2,99.3 L87.8,97.7 L90.7,96.3 L93.7,95.2 L96.8,94.4 L100.0,94.0 L103.3,93.9 L106.6,94.2 L109.8,94.8 L113.0,95.7 L116.2,97.0 L119.2,98.6 L122.0,100.6 L124.6,102.8 L127.0,105.4 L129.2,108.2 L131.0,111.2 L132.5,114.4 L133.7,117.8 L134.5,121.4 L135.0,125.0 L135.1,128.7 L134.8,132.4 L134.0,136.1 L132.9,139.7 L131.5,143.2 L129.6,146.5 L127.4,149.7 L124.8,152.6 L122.0,155.3 L118.8,157.6 L115.4,159.7 L111.8,161.3 L108.0,162.6 L104.0,163.5 L100.0,164.0 L95.9,164.1 L91.8,163.7 L87.7,162.9 L83.7,161.6 L79.8,159.9 L76.1,157.8 L72.7,155.4 L69.4,152.5 L66.5,149.3 L63.9,145.8 L61.7,142.1 L59.9,138.0 L58.5,133.8 L57.5,129.5 L57.0,125.0 L57.0,120.5 L57.4,115.9 L58.3,111.5 L59.7,107.1 L61.6,102.8 L63.9,98.8 L66.7,95.0 L69.8,91.5 L73.3,88.3 L77.2,85.5 L81.3,83.0 L85.7,81.1 L90.3,79.5 L95.1,78.5 L100.0,78.0 L104.9,78.0 L109.9,78.5 L114.8,79.5 L119.6,81.1 L124.2,83.1 L128.6,85.7 L132.7,88.7 L136.5,92.1 L140.0,96.0 L143.0,100.2 L145.6,104.7 L147.7,109.5 L149.4,114.5 L150.5,119.7 L151.0,125.0" fill="none" stroke="#A8552B" stroke-width="9" stroke-linecap="round"/>
+<path d="M 62,116 C 74,106 86,126 100,114 C 112,104 124,122 138,112" fill="none" stroke="#FFF8EE" stroke-width="6" stroke-linecap="round"/></svg><div><b>Casa Canela</b><small>Planificador de obrador</small></div></div>
+  <nav id="nav"></nav>
+  <div class="side-foot userbox"><span id="u-name"></span><span id="corte"></span><button id="logout">Cerrar sesión</button></div>
+</aside>
+<main>
+
+<section class="view" id="v-resumen">
+  <div class="head"><div><h1 id="r-title">Resumen</h1><p id="r-sub"></p></div></div>
+  <div class="grid g4" id="r-kpis"></div>
+  <div class="card"><h3>Cómo trabaja el sistema</h3>
+    <div class="flow"><div><b>1 · Ventas</b><span>Se cargan a diario desde la app o automáticamente con Make</span></div><div><b>2 · Proyección</b><span>Promedio ponderado de los últimos 4 días iguales</span></div><div><b>3 · Producción</b><span>Orden diaria por correo al obrador</span></div><div><b>4 · Compras</b><span>Pedidos semanales a cada proveedor</span></div></div>
+  </div>
+  <div class="card"><div class="head" style="margin:0 0 8px"><h3>Venta semanal (S/) — últimas 12 semanas y la proyectada</h3><div class="legend"><span><i class="dot" style="background:var(--cacao)"></i>Barranco</span><span><i class="dot" style="background:var(--canela)"></i>San Isidro</span><span><i class="dot" style="background:var(--miel)"></i>Proyección</span></div></div>
+    <div class="fig" id="r-chart"><svg></svg></div></div>
+  <div class="card" id="r-acc"></div>
+  <div class="grid g2">
+    <div class="card"><h3>Lo que más se venderá la próxima semana</h3><div class="scroll"><table id="r-top"></table></div></div>
+    <div class="card"><h3>Alertas para la gestión</h3><div id="r-alerts"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-ventas">
+  <div class="head"><div><h1>Ventas históricas</h1><p>Lo vendido cada día por local, canal y producto. Los días atípicos se marcan y quedan fuera del promedio.</p></div></div>
+  <div class="card controls">
+    <label class="f">Local<select id="h-local"></select></label>
+    <label class="f">Canal<select id="h-canal"></select></label>
+    <label class="f">Producto<select id="h-prod"></select></label>
+    <label class="f">Medida<select id="h-med"><option value="s">Venta S/</option><option value="u">Unidades</option></select></label>
+  </div>
+  <div class="card"><h3 id="h-ctitle">Venta diaria</h3><div class="legend" style="margin:6px 0"><span><i class="dot" style="background:var(--canela)"></i>Día normal</span><span><i class="dot" style="background:var(--bad)"></i>Día atípico (excluido)</span></div><div class="fig" id="h-chart"><svg></svg></div></div>
+  <div class="card"><h3>Mapa semana × día de la semana</h3><p class="note">El patrón que usa la proyección: cada día se compara con los mismos días de semanas anteriores.</p><div class="scroll"><table id="h-heat"></table></div></div>
+  <div class="grid g2">
+    <div class="card"><h3>Días atípicos</h3><p class="note">Desmarca un día para volver a incluirlo en el promedio, o agrega uno nuevo.</p><div id="h-atip"></div>
+      <div class="controls" style="margin-top:10px"><label class="f">Fecha<input type="date" id="a-fecha"></label><label class="f">Local<select id="a-local"></select></label><label class="f">Motivo<input type="text" id="a-mot" placeholder="Ej. evento en la cuadra"></label><button id="a-add">Agregar</button></div></div>
+    <div class="card"><h3>Cargar ventas</h3><p class="note">CSV con columnas <b>fecha, local, canal, producto_id, unidades</b>. También llegan solas cada noche con Make. Al cargar, todo se recalcula.</p>
+      <div class="controls"><input type="file" id="up-file" accept=".csv,text/csv"><button id="up-demo" class="ghost">Cargar semana de ejemplo (16–22 nov)</button><button id="up-reset" class="ghost">Restablecer demo</button></div>
+      <p class="note" id="up-msg"></p></div>
+  </div>
+</section>
+
+<section class="view" id="v-proyeccion">
+  <div class="head"><div><h1>Proyección de ventas</h1><p id="p-sub"></p></div></div>
+  <div class="card controls">
+    <label class="f">Local<select id="p-local"></select></label>
+    <label class="f">Canal<select id="p-canal"></select></label>
+    <label class="f">Método<select id="p-met"><option value="w">Ponderado 40/30/20/10</option><option value="s">Promedio simple</option></select></label>
+  </div>
+  <div class="card"><p class="note">Unidades proyectadas por día. Toca un número para ver de dónde sale.</p><div class="scroll"><table id="p-table"></table></div><div id="p-exp"></div></div>
+</section>
+
+<section class="view" id="v-produccion">
+  <div class="head"><div><h1>Órdenes de producción</h1><p>El obrador central produce para los dos locales. Las tortas y bandejas se hornean enteras y luego se porcionan.</p></div>
+    <div class="controls"><label class="f">Colchón de seguridad<select id="o-seg"><option value="0">0 %</option><option value="0.05">5 %</option><option value="0.1">10 %</option><option value="0.15">15 %</option></select></label><button class="ghost" id="o-print">Imprimir</button><button class="ghost" id="o-copy">Copiar orden</button></div></div>
+  <div class="tabs" id="o-tabs"></div>
+  <div class="card"><h3 id="o-t1">Productos terminados</h3><div class="scroll"><table id="o-prod" class="stack"></table></div></div>
+  <div class="card"><h3 id="o-t2">Recetas base a preparar</h3><p class="note">Toca una receta para ver los ingredientes ya escalados.</p><div class="scroll"><table id="o-base"></table></div><div id="o-exp"></div></div>
+</section>
+
+<section class="view" id="v-compras">
+  <div class="head"><div><h1>Lista de compras</h1><p id="c-sub"></p></div><button class="ghost" id="c-copy">Copiar pedidos</button></div>
+  <div class="grid g4" id="c-kpis"></div>
+  <div class="card"><p class="note">El stock se guarda en la base de datos al editarlo. Se pide en la presentación del proveedor, redondeando hacia arriba.</p><div class="scroll"><table id="c-table"></table></div></div>
+</section>
+
+<section class="view" id="v-costos">
+  <div class="head"><div><h1>Costos y food cost</h1><p>Costo teórico de cada producto a partir de sus recetas. Food cost = costo ÷ precio sin IGV (18 %). No incluye empaques ni la comisión de Rappi.</p></div></div>
+  <div class="grid g4" id="k-kpis"></div>
+  <div class="card"><div class="legend" style="margin-bottom:8px"><span><i class="dot" style="background:var(--ok)"></i>Hasta 28 %</span><span><i class="dot" style="background:var(--warn)"></i>28 % a 33 %</span><span><i class="dot" style="background:var(--bad)"></i>Más de 33 %</span></div><div class="scroll"><table id="k-table"></table></div><div id="k-exp"></div></div>
+  <div class="card"><h3>Costo de recetas base</h3><div class="scroll"><table id="k-bases"></table></div></div>
+</section>
+
+<section class="view" id="v-recetario">
+  <div class="head"><div><h1>Recetario</h1><p>Fichas de los productos y de las recetas base que los componen.</p></div><label class="f">Ficha<select id="rc-sel"></select></label></div>
+  <div id="rc-body"></div>
+</section>
+
+<section class="view" id="v-automatizaciones">
+  <div class="head"><div><h1>Automatizaciones</h1><p>Make se conecta a esta API para cargar ventas y enviar correos sin intervención manual.</p></div></div>
+  <div class="card"><h3>Escenarios de Make</h3><div class="scroll"><table id="m-esc"></table></div></div>
+  <div class="grid g2">
+    <div class="card"><h3>Correos</h3><div class="controls" style="flex-direction:column;align-items:stretch">
+      <label class="f">Correo del obrador (orden diaria)<input type="text" id="cf-obr"></label>
+      <label class="f">Correo del dueño (reporte semanal)<input type="text" id="cf-due"></label></div>
+      <h3 style="margin:16px 0 8px">Proveedores</h3><div class="scroll"><table id="cf-prov"></table></div>
+      <div class="controls" style="margin-top:12px"><button id="cf-save">Guardar</button></div></div>
+    <div class="card"><h3>Vista previa de los correos</h3><p class="note">Lo mismo que Make envía, generado ahora con los datos actuales.</p>
+      <div class="controls"><button class="ghost" data-prev="produccion">Orden de mañana</button><button class="ghost" data-prev="pedidos">Pedidos</button><button class="ghost" data-prev="reporte">Reporte semanal</button></div>
+      <div id="m-prev" style="margin-top:12px"></div></div>
+  </div>
+  <div class="card"><h3>Conexión de la API</h3><p class="note">Make usa esta dirección y la clave en el encabezado <b>x-api-key</b>. No compartas la clave.</p>
+    <table class="endp"><tr><th>Uso</th><th>Método y ruta</th></tr>
+    <tr><td>Cargar ventas</td><td><code class="k">POST /make/ventas</code></td></tr>
+    <tr><td>Orden de producción</td><td><code class="k">GET /make/produccion?fecha=AAAA-MM-DD</code> (por defecto, mañana)</td></tr>
+    <tr><td>Pedidos a proveedores</td><td><code class="k">GET /make/pedidos</code></td></tr>
+    <tr><td>Reporte semanal</td><td><code class="k">GET /make/reporte</code></td></tr></table>
+    <p style="margin:12px 0 6px"><b>URL base:</b> <code class="k" id="m-url"></code></p>
+    <div class="controls"><button class="ghost" id="m-key">Mostrar clave de API</button><code class="k" id="m-keyv" hidden></code></div></div>
+  <div class="card"><h3>Bitácora</h3><p class="note">Últimos 30 movimientos: cargas, envíos de Make y cambios.</p><div class="scroll"><table id="m-bit"></table></div></div>
+</section>
+
+<section class="view" id="v-marca">
+  <div class="head"><div><h1>Marca Casa Canela</h1><p>Cafetería-pastelería artesanal ficticia con dos locales en Lima (Barranco y San Isidro) y un obrador central.</p></div></div>
+  <div class="grid g2"><div class="card" style="display:grid;place-items:center;background:#F5EBDD"><svg viewBox="50 20 300 370" style="width:min(300px,100%)" role="img" aria-label="Logo Casa Canela"><path d="M 70,370 L 70,170 A 130,130 0 0 1 330,170 L 330,370 Z" fill="#3B2418"/>
+<path d="M 86,356 L 86,172 A 114,114 0 0 1 314,172 L 314,356 Z" fill="none" stroke="#D69A3A" stroke-width="2"/>
+<circle cx="200" cy="170" r="62" fill="#D69A3A"/>
+<path d="M204.0,170.0 L204.3,170.4 L204.5,170.9 L204.6,171.5 L204.7,172.1 L204.7,172.7 L204.6,173.4 L204.4,174.0 L204.2,174.7 L203.8,175.3 L203.4,175.9 L202.9,176.5 L202.3,177.0 L201.6,177.5 L200.8,177.9 L200.0,178.2 L199.1,178.5 L198.2,178.6 L197.2,178.7 L196.2,178.6 L195.2,178.4 L194.2,178.0 L193.2,177.6 L192.2,177.0 L191.3,176.3 L190.4,175.5 L189.6,174.6 L188.9,173.6 L188.3,172.5 L187.9,171.3 L187.5,170.0 L187.3,168.7 L187.2,167.3 L187.3,165.9 L187.5,164.5 L187.9,163.0 L188.5,161.7 L189.2,160.3 L190.1,159.0 L191.2,157.8 L192.3,156.7 L193.6,155.7 L195.1,154.9 L196.6,154.2 L198.3,153.6 L200.0,153.2 L201.8,153.1 L203.6,153.1 L205.4,153.3 L207.3,153.7 L209.1,154.3 L210.8,155.1 L212.5,156.1 L214.1,157.3 L215.6,158.7 L217.0,160.2 L218.1,161.9 L219.2,163.8 L220.0,165.8 L220.6,167.8 L221.0,170.0 L221.2,172.2 L221.1,174.5 L220.8,176.8 L220.2,179.0 L219.4,181.2 L218.4,183.3 L217.1,185.4 L215.6,187.3 L213.8,189.1 L211.9,190.6 L209.8,192.0 L207.5,193.2 L205.1,194.1 L202.6,194.8 L200.0,195.2 L197.3,195.4 L194.6,195.3 L191.9,194.8 L189.3,194.1 L186.7,193.1 L184.2,191.8 L181.8,190.2 L179.6,188.4 L177.5,186.3 L175.7,184.0 L174.1,181.5 L172.8,178.9 L171.7,176.0 L170.9,173.1 L170.5,170.0 L170.4,166.9 L170.6,163.7 L171.1,160.6 L172.0,157.5 L173.2,154.5 L174.8,151.7 L176.6,148.9 L178.7,146.4 L181.2,144.1 L183.8,142.0 L186.7,140.2 L189.8,138.7 L193.1,137.5 L196.5,136.7 L200.0,136.2 L203.6,136.2 L207.1,136.4 L210.7,137.1 L214.2,138.1 L217.6,139.5 L220.8,141.3 L223.9,143.4 L226.8,145.9 L229.4,148.7 L231.7,151.7 L233.7,155.0 L235.3,158.5 L236.6,162.2 L237.5,166.1 L238.0,170.0 L238.1,174.0 L237.7,178.0 L236.9,182.0 L235.8,185.9 L234.1,189.7 L232.1,193.3 L229.7,196.8 L226.9,199.9 L223.8,202.8 L220.4,205.4 L216.7,207.6 L212.8,209.4 L208.7,210.8 L204.4,211.7 L200.0,212.2 L195.6,212.3 L191.1,211.9 L186.7,211.0 L182.4,209.6 L178.2,207.8 L174.2,205.6 L170.4,202.9 L166.9,199.8 L163.8,196.3 L161.0,192.5 L158.6,188.5 L156.6,184.1 L155.1,179.6 L154.0,174.8 L153.5,170.0 L153.5,165.1 L154.0,160.2 L155.0,155.4 L156.5,150.6 L158.5,146.0 L161.0,141.7 L164.0,137.6 L167.4,133.8 L171.2,130.3 L175.3,127.3 L179.8,124.7 L184.6,122.5 L189.6,120.9 L194.7,119.8 L200.0,119.2 L205.3,119.2 L210.7,119.8 L215.9,120.9 L221.1,122.6 L226.1,124.8 L230.8,127.6 L235.3,130.8 L239.4,134.5 L243.1,138.7 L246.4,143.2 L249.2,148.1 L251.5,153.3 L253.2,158.7 L254.4,164.3 L255.0,170.0 L255.0,175.8 L254.4,181.6 L253.1,187.3 L251.3,192.8 L248.9,198.2 L245.9,203.3 L242.3,208.1 L238.3,212.6 L233.8,216.6 L228.9,220.1 L223.6,223.1 L218.0,225.5" fill="none" stroke="#A8552B" stroke-width="9" stroke-linecap="round"/>
+<path d="M 156,160 C 170,150 182,170 198,158 C 212,148 226,166 242,156" fill="none" stroke="#F5EBDD" stroke-width="6" stroke-linecap="round"/>
+<path d="M 172,138 C 184,130 194,146 208,136 C 216,131 222,138 228,134" fill="none" stroke="#F5EBDD" stroke-width="4.5" stroke-linecap="round"/>
+<ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(0 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(0 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(45 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(45 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(90 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(90 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(135 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(135 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(180 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(180 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(225 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(225 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(270 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(270 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#A8552B" transform="rotate(315 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#F5EBDD" transform="rotate(315 268 110)"/><circle cx="268" cy="110" r="1.8200000000000003" fill="#F5EBDD"/>
+<text x="200" y="278" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="44" font-weight="700" fill="#F5EBDD">Casa</text>
+<text x="200" y="322" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="44" font-weight="700" font-style="italic" fill="#D69A3A">Canela</text>
+<text x="200" y="348" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="12" letter-spacing="3" fill="#F5EBDD">CAFÉ · PASTELERÍA</text></svg></div>
+  <div class="card" style="display:grid;place-items:center;background:#3B2418"><svg viewBox="50 20 300 370" style="width:min(300px,100%)" role="img" aria-label="Logo Casa Canela para fondo oscuro"><path d="M 70,370 L 70,170 A 130,130 0 0 1 330,170 L 330,370 Z" fill="#A8552B"/>
+<path d="M 86,356 L 86,172 A 114,114 0 0 1 314,172 L 314,356 Z" fill="none" stroke="#F5EBDD" stroke-width="2"/>
+<circle cx="200" cy="170" r="62" fill="#D69A3A"/>
+<path d="M204.0,170.0 L204.3,170.4 L204.5,170.9 L204.6,171.5 L204.7,172.1 L204.7,172.7 L204.6,173.4 L204.4,174.0 L204.2,174.7 L203.8,175.3 L203.4,175.9 L202.9,176.5 L202.3,177.0 L201.6,177.5 L200.8,177.9 L200.0,178.2 L199.1,178.5 L198.2,178.6 L197.2,178.7 L196.2,178.6 L195.2,178.4 L194.2,178.0 L193.2,177.6 L192.2,177.0 L191.3,176.3 L190.4,175.5 L189.6,174.6 L188.9,173.6 L188.3,172.5 L187.9,171.3 L187.5,170.0 L187.3,168.7 L187.2,167.3 L187.3,165.9 L187.5,164.5 L187.9,163.0 L188.5,161.7 L189.2,160.3 L190.1,159.0 L191.2,157.8 L192.3,156.7 L193.6,155.7 L195.1,154.9 L196.6,154.2 L198.3,153.6 L200.0,153.2 L201.8,153.1 L203.6,153.1 L205.4,153.3 L207.3,153.7 L209.1,154.3 L210.8,155.1 L212.5,156.1 L214.1,157.3 L215.6,158.7 L217.0,160.2 L218.1,161.9 L219.2,163.8 L220.0,165.8 L220.6,167.8 L221.0,170.0 L221.2,172.2 L221.1,174.5 L220.8,176.8 L220.2,179.0 L219.4,181.2 L218.4,183.3 L217.1,185.4 L215.6,187.3 L213.8,189.1 L211.9,190.6 L209.8,192.0 L207.5,193.2 L205.1,194.1 L202.6,194.8 L200.0,195.2 L197.3,195.4 L194.6,195.3 L191.9,194.8 L189.3,194.1 L186.7,193.1 L184.2,191.8 L181.8,190.2 L179.6,188.4 L177.5,186.3 L175.7,184.0 L174.1,181.5 L172.8,178.9 L171.7,176.0 L170.9,173.1 L170.5,170.0 L170.4,166.9 L170.6,163.7 L171.1,160.6 L172.0,157.5 L173.2,154.5 L174.8,151.7 L176.6,148.9 L178.7,146.4 L181.2,144.1 L183.8,142.0 L186.7,140.2 L189.8,138.7 L193.1,137.5 L196.5,136.7 L200.0,136.2 L203.6,136.2 L207.1,136.4 L210.7,137.1 L214.2,138.1 L217.6,139.5 L220.8,141.3 L223.9,143.4 L226.8,145.9 L229.4,148.7 L231.7,151.7 L233.7,155.0 L235.3,158.5 L236.6,162.2 L237.5,166.1 L238.0,170.0 L238.1,174.0 L237.7,178.0 L236.9,182.0 L235.8,185.9 L234.1,189.7 L232.1,193.3 L229.7,196.8 L226.9,199.9 L223.8,202.8 L220.4,205.4 L216.7,207.6 L212.8,209.4 L208.7,210.8 L204.4,211.7 L200.0,212.2 L195.6,212.3 L191.1,211.9 L186.7,211.0 L182.4,209.6 L178.2,207.8 L174.2,205.6 L170.4,202.9 L166.9,199.8 L163.8,196.3 L161.0,192.5 L158.6,188.5 L156.6,184.1 L155.1,179.6 L154.0,174.8 L153.5,170.0 L153.5,165.1 L154.0,160.2 L155.0,155.4 L156.5,150.6 L158.5,146.0 L161.0,141.7 L164.0,137.6 L167.4,133.8 L171.2,130.3 L175.3,127.3 L179.8,124.7 L184.6,122.5 L189.6,120.9 L194.7,119.8 L200.0,119.2 L205.3,119.2 L210.7,119.8 L215.9,120.9 L221.1,122.6 L226.1,124.8 L230.8,127.6 L235.3,130.8 L239.4,134.5 L243.1,138.7 L246.4,143.2 L249.2,148.1 L251.5,153.3 L253.2,158.7 L254.4,164.3 L255.0,170.0 L255.0,175.8 L254.4,181.6 L253.1,187.3 L251.3,192.8 L248.9,198.2 L245.9,203.3 L242.3,208.1 L238.3,212.6 L233.8,216.6 L228.9,220.1 L223.6,223.1 L218.0,225.5" fill="none" stroke="#3B2418" stroke-width="9" stroke-linecap="round"/>
+<path d="M 156,160 C 170,150 182,170 198,158 C 212,148 226,166 242,156" fill="none" stroke="#F5EBDD" stroke-width="6" stroke-linecap="round"/>
+<path d="M 172,138 C 184,130 194,146 208,136 C 216,131 222,138 228,134" fill="none" stroke="#F5EBDD" stroke-width="4.5" stroke-linecap="round"/>
+<ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(0 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(0 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(45 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(45 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(90 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(90 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(135 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(135 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(180 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(180 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(225 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(225 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(270 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(270 268 110)"/><ellipse cx="268" cy="102.85" rx="2.86" ry="6.5" fill="#F5EBDD" transform="rotate(315 268 110)"/><ellipse cx="268" cy="101.94" rx="0.9100000000000001" ry="1.69" fill="#3B2418" transform="rotate(315 268 110)"/><circle cx="268" cy="110" r="1.8200000000000003" fill="#3B2418"/>
+<text x="200" y="278" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="44" font-weight="700" fill="#F5EBDD">Casa</text>
+<text x="200" y="322" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="44" font-weight="700" font-style="italic" fill="#F5EBDD">Canela</text>
+<text x="200" y="348" text-anchor="middle" font-family="Lora, Georgia, serif" font-size="12" letter-spacing="3" fill="#F5EBDD">CAFÉ · PASTELERÍA</text></svg></div></div>
+  <div class="card"><h3 style="margin-bottom:12px">Paleta</h3><div class="grid g4" id="m-pal"></div></div>
+</section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
