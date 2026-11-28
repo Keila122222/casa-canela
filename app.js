@@ -39,11 +39,13 @@ const ROL = { admin: 'Administración', obrador: 'Obrador', compras: 'Compras' }
 async function loadData(msg = 'Cargando datos…') {
   $('#loading').textContent = msg; $('#loading').hidden = false;
   try {
-    RAW = await api('/datos'); USER = RAW.usuario;
+    try { RAW = await api('/datos'); ST.offline = null; try { localStorage.setItem('cc_datos', JSON.stringify({ t: Date.now(), d: RAW })); } catch { } }
+    catch (x) { const c = (() => { try { return JSON.parse(localStorage.getItem('cc_datos') || 'null'); } catch { return null; } })(); if (!esRed(x) || !c) throw x; RAW = c.d; ST.offline = c.t; }
+    USER = RAW.usuario;
     const rows = { ...RAW, ventas: RAW.ventas.map(v => ({ fecha: v[0], local: v[1], canal: v[2], producto_id: v[3], unidades: v[4] })) };
     E = createEngine(buildDataset(rows));
     ST.stock = E.stockEfectivo(Object.fromEntries(E.IN.map(i => [i.id, i.stock])), RAW.config.stock_al, RAW.produccion_real || []);
-    setup();
+    setup(); appBar(); sincronizar();
   } finally { $('#loading').hidden = true; }
 }
 // semanas: históricas (Ventas) y de trabajo (2 pasadas + 4 futuras)
@@ -480,14 +482,17 @@ async function guardarTodo() {
     let hechos = 0;
     for (const lote of lotes) { if (!lote.length) continue;
       for (const r of lote) if (ST.fotos[r.producto_id]) r.foto = await fileToB64(ST.fotos[r.producto_id]);
-      const res = await api('/produccion-real', { method: 'POST', body: JSON.stringify({ fecha: f, registros: lote }) });
+      let res; try { if (!navigator.onLine) throw new TypeError('sin señal'); res = await api('/produccion-real', { method: 'POST', body: JSON.stringify({ fecha: f, registros: lote }) }); }
+      catch (x) { if (!esRed(x)) throw x; await COLA.put({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), fecha: f, registros: lote }); res = { fotos: {} }; ST.encolado = true; }
       const now = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
       lote.forEach(r => { const list = RAW.produccion_real, ex = list.find(x => x.fecha === f && x.producto_id === r.producto_id);
         const rec = { fecha: f, producto_id: r.producto_id, planificado: r.planificado, producido: r.producido, sobrante: r.sobrante, foto_url: (res.fotos || {})[r.producto_id] || ex?.foto_url || null, usuario: USER.usuario || USER.nombre, actualizado: now };
         if (ex) Object.assign(ex, rec); else list.push(rec); });
       hechos += lote.length; $$('.save-all').forEach(b => b.textContent = `Guardando… ${hechos}/${regs.length}`);
     }
-    ST.fotos = {}; rProd(); toast(`Producción guardada: ${regs.length} productos${conFoto.length ? ', ' + conFoto.length + ' fotos' : ''}`);
+    ST.fotos = {}; rProd(); appBar();
+    if (ST.encolado) { ST.encolado = false; toast('Sin señal: quedó guardado en el celular y se enviará solo al volver la conexión'); }
+    else toast(`Producción guardada: ${regs.length} productos${conFoto.length ? ', ' + conFoto.length + ' fotos' : ''}`);
   } catch (x) { toast(x.message); }
   finally { $$('.save-all').forEach(b => { b.disabled = false; b.textContent = 'Guardar todo'; }); }
 }
@@ -547,9 +552,10 @@ function rCompras() {
     const nItems = pe ? pe.items.length : g.items.filter(x => x.packs > 0).length, tot = pe ? +pe.total : g.total, prov = pe ? pe.proveedor : g.proveedor;
     const st = pe ? `<span class="badge ${EST[pe.estado][0]}">${EST[pe.estado][1]}</span>` : '<span class="badge">Sugerido, por aprobar</span>';
     const seg = pe ? [`Aprobó ${esc(nomU(pe.aprobado_por))} · ${esc(pe.aprobado_en || '')}`, pe.enviado_en ? 'Enviado ' + esc(pe.enviado_en) : '', pe.fecha_recepcion ? `Recibió ${esc(nomU(pe.recibido_por))} el ${fmtD(pe.fecha_recepcion)}` : ''].filter(Boolean).join('<br>') : '';
-    const btn = !can ? '' : !pe ? `<button class="btn-sm" data-apr="${esc(prov)}">Aprobar</button>` : pe.estado === 'recibido' ? '' : `${pe.estado === 'aprobado' ? `<button class="ghost btn-sm" data-pan="${pe.id}">Anular</button> ` : ''}<button class="btn-sm" data-prc="${pe.id}">Recibido</button>`;
+    const btn = !can ? '' : !pe ? `<button class="btn-sm" data-apr="${esc(prov)}">Aprobar</button>` : pe.estado === 'recibido' ? '' : `${pe.estado === 'aprobado' ? `<button class="ghost btn-sm" data-pan="${pe.id}">Anular</button> ` : ''}<label class="btn btn-sm" style="display:inline-flex;align-items:center;cursor:pointer">📷 Recibido<input type="file" accept="image/*" capture="environment" data-prf="${pe.id}" hidden></label> <button class="ghost btn-sm" data-prc="${pe.id}" title="Registrar sin foto">Sin foto</button>`;
     const diff = pe && g && pe.estado === 'aprobado' && Math.abs(+pe.total - g.total) > 1 ? `<div class="note">El sugerido cambió a ${S(g.total, 2)}. <a href="#compras" data-apr="${esc(prov)}" style="color:var(--canela)">Volver a aprobar</a></div>` : '';
-    return `<tr><td>${esc(prov)}</td><td class="n">${N(nItems)}</td><td class="n">${S(tot, 2)}</td><td>${st}${diff}</td><td class="note">${seg}</td><td style="white-space:nowrap">${btn}</td></tr>`;
+    const ev = pe && pe.foto_url ? `<a href="${esc(pe.foto_url)}" target="_blank" rel="noopener"><img class="thumb" src="${esc(pe.foto_url)}" alt="Guía de ${esc(prov)}"></a>` : '';
+    return `<tr><td>${esc(prov)}</td><td class="n">${N(nItems)}</td><td class="n">${S(tot, 2)}</td><td>${st}${diff}</td><td class="note">${seg}${ev}</td><td style="white-space:nowrap">${btn}</td></tr>`;
   }).join('') + (filas.length ? '' : '<tr><td colspan="6" class="note">No hay nada que pedir esa semana.</td></tr>');
   $('#c-all').disabled = !can || !filas.some(f => !f.pe);
   let rows = '<tr><th>Insumo</th><th class="n">Requerido</th><th class="n">Stock actual</th><th class="n">Faltante</th><th>Presentación</th><th class="n">Pedir</th><th class="n">Costo</th></tr>';
@@ -568,8 +574,8 @@ async function aprobar(provs) {
     await loadData('Actualizando…'); toast(n === 1 ? 'Pedido aprobado: Make lo envía hoy a las 6 p. m.' : `${n} pedidos aprobados: Make los envía hoy a las 6 p. m.`);
   } catch (x) { toast(x.message); }
 }
-async function accionPedido(id, accion) {
-  try { await api('/pedidos', { method: 'PATCH', body: JSON.stringify({ id, accion, fecha: hoyLima() }) }); await loadData('Actualizando…'); toast(accion === 'recibir' ? 'Recepción registrada: el stock se actualizó' : 'Pedido anulado'); } catch (x) { toast(x.message); }
+async function accionPedido(id, accion, file) {
+  try { const body = { id, accion, fecha: hoyLima() }; if (file) { toast('Subiendo foto…'); body.foto = await fileToB64(file); } await api('/pedidos', { method: 'PATCH', body: JSON.stringify(body) }); await loadData('Actualizando…'); toast(accion === 'recibir' ? 'Recepción registrada: el stock se actualizó' : 'Pedido anulado'); } catch (x) { toast(x.message); }
 }
 
 // ---------- Food cost real vs teórico
@@ -697,6 +703,7 @@ function show() {
   if (!E) return;
   const ok = allowed().map(v => v[0]); const v = (location.hash || '').slice(1); const k = ok.includes(v) ? v : ok[0];
   $$('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + k)); $$('#nav a').forEach(a => a.classList.toggle('on', a.dataset.v === k));
+  const na = $('#nav a.on'); if (na && innerWidth <= 900) na.scrollIntoView({ inline: 'center', block: 'nearest' });
   ['#up-demo', '#up-reset', '#a-add', '#up-tpl'].forEach(s => $(s).disabled = USER.rol !== 'admin');
   R[k]();
 }
@@ -744,6 +751,7 @@ document.addEventListener('change', async e => {
     const id = e.target.dataset.st, v = Math.max(0, +e.target.value * 1000 || 0), old = ST.stock[id] || 0; ST.stock[id] = v; rCompras();
     clearTimeout(stockTimers[id]); stockTimers[id] = setTimeout(async () => { try { await api('/stock', { method: 'POST', body: JSON.stringify({ insumo_id: id, ajuste: v - old }) }); toast('Stock guardado'); } catch (x) { toast(x.message); } }, 500);
   }
+  if (e.target.dataset.prf && e.target.files[0]) { accionPedido(+e.target.dataset.prf, 'recibir', e.target.files[0]); return; }
   if (e.target.dataset.foto !== undefined && e.target.files[0]) { const tr = e.target.closest('tr'), f0 = e.target.files[0]; ST.fotos[tr.dataset.reg] = f0; tr.classList.add('dirty');
     tr.querySelector("[data-fprev]").innerHTML = `<img class="thumb" src="${URL.createObjectURL(f0)}" alt="Foto nueva, falta guardar"><span class="badge warn-b">Foto lista</span>`; marcarPend(); }
   if (e.target.dataset.evf || e.target.dataset.eva) {
@@ -805,7 +813,7 @@ $('#c-copy').addEventListener('click', () => { const cp = compraDe(projRange(...
 // ---------- sesión
 function logout(expired) {
   if (TOKEN && !expired) fetch(API + '/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + TOKEN } }).catch(() => { });
-  TOKEN = null; store.set('cc_token', null); E = null; $('#app').hidden = true; $('#login').hidden = false;
+  TOKEN = null; store.set('cc_token', null); store.set('cc_datos', null); E = null; USER = null; $('#appbar').innerHTML = ''; $('#app').hidden = true; $('#login').hidden = false;
   if (expired) $('#l-err').textContent = 'Tu sesión venció. Vuelve a ingresar.';
 }
 $('#logout').addEventListener('click', () => logout(false));
@@ -815,10 +823,74 @@ $('#login-f').addEventListener('submit', async e => {
   catch (x) { $('#l-err').textContent = x.message; }
   finally { btn.disabled = false; btn.textContent = 'Ingresar'; }
 });
-// ---------- app instalable
+// ---------- app: instalar, avisos al celular, sin señal y actualización automática (igual que el checklist)
+const APP_VER = '2026-11-27b';
+const esRed = x => x instanceof TypeError || /network|failed to fetch|load failed|sin señal/i.test(String(x && x.message));
+const esStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
+const COLA = {
+  db: null,
+  async open() { if (this.db) return this.db; this.db = await new Promise((ok, ko) => { const r = indexedDB.open('cc_cola', 1); r.onupgradeneeded = () => r.result.createObjectStore('cola', { keyPath: 'id' }); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); }); return this.db; },
+  async tx(mode, fn) { const db = await this.open(); return new Promise((ok, ko) => { const t = db.transaction('cola', mode); const q = fn(t.objectStore('cola')); t.oncomplete = () => ok(q && q.result); t.onerror = () => ko(t.error); }); },
+  put(x) { return this.tx('readwrite', s => s.put(x)); }, all() { return this.tx('readonly', s => s.getAll()); }, del(id) { return this.tx('readwrite', s => s.delete(id)); },
+};
+let SYNC = false;
+async function sincronizar() {
+  if (SYNC || !navigator.onLine || !TOKEN) return; SYNC = true;
+  try {
+    const items = await COLA.all().catch(() => []); if (!items.length) return;
+    let n = 0; for (const it of items) { try { await api('/produccion-real', { method: 'POST', body: JSON.stringify({ fecha: it.fecha, registros: it.registros }) }); await COLA.del(it.id); n += it.registros.length; } catch (x) { if (esRed(x)) break; await COLA.del(it.id); toast('No se pudo enviar un registro guardado: ' + x.message); } }
+    if (n) { toast(`Se enviaron ${n} registros de producción guardados sin señal`); await loadData('Actualizando…'); }
+  } finally { SYNC = false; appBar(); }
+}
+addEventListener('online', () => { sincronizar(); if (ST.offline) loadData('Volvió la conexión…').catch(() => { }); });
+addEventListener('offline', () => appBar());
 let DEFER = null;
-addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFER = e; $('#install').hidden = false; });
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); DEFER = e; $('#install').hidden = false; appBar(); });
+const pushOK = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const b64u = s => { const p = '='.repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, c => c.charCodeAt(0)); };
+const QUE_AVISA = { admin: 'orden de producción lista, registro del obrador, stock crítico, pedidos por aprobar y reporte semanal', obrador: 'la orden de producción de mañana (6 p. m.) y el recordatorio si falta registrar', compras: 'stock crítico, pedidos por aprobar y pedidos enviados' };
+async function appBar() {
+  const el = $('#appbar'); if (!el || !USER) return; const h = [];
+  const pend = await COLA.all().then(a => a.reduce((x, it) => x + it.registros.length, 0)).catch(() => 0);
+  if (!navigator.onLine || ST.offline) h.push(`<div class="inst off"><span>📴 <b>Sin conexión.</b> ${ST.offline ? 'Ves los datos guardados del ' + new Date(ST.offline - 5 * 3600e3).toISOString().slice(0, 16).replace('T', ' ') + '.' : ''} Puedes registrar la producción: se envía sola al volver la señal.</span></div>`);
+  if (pend) h.push(`<div class="inst"><span>⏳ <b>${pend} registros de producción</b> esperando señal para enviarse.</span>${navigator.onLine ? '<button class="btn-sm" id="ab-sync">Enviar ahora</button>' : ''}</div>`);
+  if (!esStandalone() && !store.get('cc_inst_x')) {
+    if (DEFER) h.push('<div class="inst"><span>📲 Instala Casa Canela en este equipo: se abre con un toque, a pantalla completa y funciona sin señal.</span><button class="btn-sm" id="ab-inst">Instalar</button><button class="x" id="ab-x" aria-label="Cerrar">✕</button></div>');
+    else if (esIOS()) h.push('<div class="inst"><span>📲 Para instalarla en el iPhone: toca <b>Compartir</b> ⬆️ y luego <b>“Agregar a inicio”</b>.</span><button class="x" id="ab-x" aria-label="Cerrar">✕</button></div>');
+  }
+  if (esIOS() && !esStandalone()) { if (!store.get('cc_push_x')) h.push('<div class="inst"><span>🔔 Para recibir avisos en el iPhone, primero instala la app y ábrela desde el ícono.</span></div>'); }
+  else if (pushOK() && RAW.config.vapid_public) {
+    if (Notification.permission === 'denied') h.push('<div class="inst off"><span>🔕 Las notificaciones están bloqueadas en este navegador. Actívalas en los ajustes para recibir avisos.</span></div>');
+    else if (store.get('cc_push_ok') === USER.usuario && Notification.permission === 'granted') { if (!store.get('cc_push_x')) h.push(`<div class="inst ok"><span>🔔 Avisos activados en este equipo: ${QUE_AVISA[USER.rol]}.</span><button class="ghost btn-sm" id="ab-test">Probar</button><button class="x" id="ab-px" aria-label="Cerrar">✕</button></div>`); }
+    else h.push(`<div class="inst"><span>🔔 Recibe avisos en este equipo: ${QUE_AVISA[USER.rol]}.</span><button class="btn-sm" id="ab-push">Activar avisos</button></div>`);
+  }
+  el.innerHTML = h.join('');
+  const on = (id, f) => { const b = $('#' + id); if (b) b.onclick = f; };
+  on('ab-inst', async () => { DEFER.prompt(); try { await DEFER.userChoice; } catch { } DEFER = null; $('#install').hidden = true; appBar(); });
+  on('ab-x', () => { store.set('cc_inst_x', '1'); appBar(); });
+  on('ab-px', () => { store.set('cc_push_x', '1'); appBar(); });
+  on('ab-sync', () => sincronizar());
+  on('ab-push', async () => {
+    try {
+      if (await Notification.requestPermission() !== 'granted') throw new Error('Sin permiso para mostrar notificaciones');
+      const reg = await navigator.serviceWorker.ready; let sub = await reg.pushManager.getSubscription();
+      if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(RAW.config.vapid_public) });
+      await api('/push', { method: 'POST', body: JSON.stringify({ sub: sub.toJSON() }) }); store.set('cc_push_ok', USER.usuario); toast('🔔 Avisos activados'); appBar();
+    } catch (x) { toast(x.message); }
+  });
+  on('ab-test', async () => { try { await api('/push/probar', { method: 'POST' }); toast('Enviamos una notificación de prueba: llega en unos segundos'); } catch (x) { toast(x.message); } });
+}
+async function revisarVersion() {
+  if (location.protocol !== 'https:' || !navigator.onLine) return;
+  if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  if ($$('#o-reg tr.dirty').length) return;
+  try { const v = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.ok ? r.json() : null);
+    if (v && v.v && v.v !== APP_VER && sessionStorage.getItem('cc_recarga') !== v.v) { sessionStorage.setItem('cc_recarga', v.v); location.reload(); } } catch { }
+}
+addEventListener('load', revisarVersion);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { revisarVersion(); sincronizar(); } });
 $('#install').addEventListener('click', async () => { if (!DEFER) return; DEFER.prompt(); await DEFER.userChoice; DEFER = null; $('#install').hidden = true; });
 addEventListener('appinstalled', () => { $('#install').hidden = true; toast('App instalada'); });
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => { });
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => { }));
 if (TOKEN) loadData().catch(() => logout(true)); else $('#login').hidden = false;

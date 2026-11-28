@@ -139,6 +139,22 @@ tr.dirty td:first-child{box-shadow:inset 3px 0 0 var(--miel)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media(max-width:700px){.al table{display:block;overflow-x:auto;max-width:100%;font-size:12.5px}.al td{white-space:normal!important}}
 @media(max-width:900px){aside .userbox{display:flex!important;flex-direction:row;align-items:center;flex-wrap:nowrap;gap:8px;font-size:12px}aside .userbox #corte{display:none}aside .userbox button{min-height:32px;margin-left:auto;width:auto}}
+
+/* barra de app: instalar, avisos, sin señal */
+#appbar:empty{display:none}#appbar{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.inst{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--miel);border-radius:12px;padding:10px 12px;font-size:14px}
+.inst span{flex:1 1 220px}.inst .x{background:transparent;color:var(--mute);border:0;font-size:18px;min-height:36px;width:36px;padding:0}
+.inst.off{border-left-color:var(--bad)}.inst.ok{border-left-color:var(--ok)}
+.inst button.btn-sm{white-space:nowrap}
+
+@media(max-width:900px){
+ aside{flex-direction:row!important;align-items:center;gap:6px!important;padding:6px 8px!important;padding-top:max(6px,env(safe-area-inset-top))!important;top:0}
+ .brand>div{display:none}.brand svg{width:34px!important;height:34px!important}
+ nav{flex:1;gap:2px}nav a{min-height:40px;padding:8px 10px}nav a i{display:none}
+ aside .userbox #u-name{display:none}aside .userbox button{font-size:0!important;width:40px!important;min-height:40px!important;padding:0!important;margin:0!important}
+ aside .userbox button::after{content:"Salir";font-size:12px}
+ main{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+}
 </style>
 
 <style>
@@ -210,6 +226,7 @@ details summary{min-height:32px}
   <div class="side-foot userbox"><span id="u-name"></span><span id="corte"></span><button id="logout">Cerrar sesión</button></div>
 </aside>
 <main>
+<div id="appbar"></div>
 
 <section class="view" id="v-resumen">
   <div class="head"><div><h1 id="r-title">Resumen</h1><p id="r-sub"></p></div></div>
