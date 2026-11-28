@@ -183,7 +183,7 @@ code.k{background:var(--arcilla);padding:3px 8px;border-radius:6px;font-size:13p
 .steps{margin:8px 0 0;padding-left:20px;line-height:1.6}.steps li{margin-bottom:4px}
 .sw2{position:relative;display:inline-block;width:46px;height:26px}.sw2 input{opacity:0;width:0;height:0}.sw2 span{position:absolute;inset:0;background:var(--line);border-radius:999px;transition:.2s;cursor:pointer}.sw2 span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}.sw2 input:checked+span{background:var(--canela)}.sw2 input:checked+span:before{transform:translateX(20px)}
 td.past{background:color-mix(in srgb,var(--cacao) 7%,transparent)}
-.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+.thumb{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}.fcell{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.fcell [data-fprev]:empty{display:none}.fcell [data-fprev]{display:flex;gap:6px;align-items:center}.fbtns{display:inline-flex;gap:6px;flex-wrap:wrap}.fbtns .btn{cursor:pointer;display:inline-flex;align-items:center}.reemplaza{opacity:.35}
 input.xs{width:80px;min-height:38px;padding:5px 8px;text-align:right}
 .diff-neg{color:var(--bad);font-weight:700}.diff-pos{color:var(--ok);font-weight:700}
 details summary{min-height:32px}
@@ -294,9 +294,9 @@ details summary{min-height:32px}
   <div class="tabs" id="o-tabs"></div>
   <div class="grid g4" id="o-kpis"></div>
   <div class="card"><h3 id="o-t1">Productos terminados</h3><p class="note">El stock de seguridad es un porcentaje extra sobre lo proyectado para no quedarse sin producto si el día vende más de lo normal.</p><div class="scroll"><table id="o-prod" class="stack"></table></div></div>
-  <div class="card" id="o-tdc"><h3 id="o-t4">Tandas del día</h3><p class="note">Para no hornear todo de madrugada y que sobre al cierre: cada producto se reparte en tres horneadas según cómo se vende por hora en cada local (últimas 4 semanas, separando lunes a viernes de fin de semana). Tortas, pies y quiches salen enteros en la primera tanda.</p>
+  <div class="card" id="o-tdc"><h3 id="o-t4">Tandas del día</h3><p class="note">Para no hornear todo de madrugada y terminar con merma al cierre: cada producto se reparte en tres horneadas según cómo se vende por hora en cada local (últimas 4 semanas, separando lunes a viernes de fin de semana). Tortas, pies y quiches salen enteros en la primera tanda.</p>
     <div class="grid g2" style="align-items:start"><div class="scroll"><table id="o-td"></table></div><div><div class="controls" style="margin-bottom:6px"><label class="f">Ver venta por hora de<select id="o-hprod"></select></label></div><div class="legend" style="margin:0 0 4px"><span><i class="dot" style="background:var(--cacao)"></i>Barranco</span><span><i class="dot" style="background:var(--canela)"></i>San Isidro</span></div><div class="fig" id="o-hchart" style="min-height:240px"><svg></svg></div><p class="note" id="o-hnote"></p></div></div></div>
-  <div class="card" id="o-regc"><div class="head" style="margin:0 0 6px"><div><h3 id="o-t3">Registro de producción real</h3><p class="note" style="margin:4px 0 0">Anota solo lo que cambió: lo que dejes vacío se guarda como producido completo y sin sobrante. Toma las fotos y al final toca <b>Guardar todo</b>; queda con fecha, hora y usuario.</p></div><button id="o-saveall" class="save-all">Guardar todo</button></div><div class="scroll"><table id="o-reg" class="stack"></table></div>
+  <div class="card" id="o-regc"><div class="head" style="margin:0 0 6px"><div><h3 id="o-t3">Registro de producción real</h3><p class="note" style="margin:4px 0 0">Anota solo lo que cambió: lo que dejes vacío se guarda como producido completo y sin merma. Toma las fotos con la cámara (no se aceptan fotos antiguas) y al final toca <b>Guardar todo</b>: cada foto sale con marca de agua con el producto, lo producido, la merma, la fecha, la hora y quién la tomó.</p></div><button id="o-saveall" class="save-all">Guardar todo</button></div><div class="scroll"><table id="o-reg" class="stack"></table></div>
     <div class="save-bar"><span id="o-pend" class="note"></span><button id="o-saveall2" class="save-all">Guardar todo</button></div></div>
   <div class="card"><h3 id="o-t2">Recetas base a preparar</h3><p class="note">Toca una receta para ver los ingredientes ya escalados.</p><div class="scroll"><table id="o-base"></table></div><div id="o-exp"></div></div>
 </section>
@@ -331,7 +331,7 @@ details summary{min-height:32px}
 <section class="view" id="v-indicadores">
   <div class="head"><div><h1>Indicadores por persona</h1><p>Cómo está cumpliendo cada responsable, con lo que registra en el sistema. Sirve para reconocer y para corregir a tiempo, no para castigar.</p></div><div class="controls"><div id="x-rng"></div></div></div>
   <div class="grid g4" id="x-kpis"></div>
-  <div class="card"><h3>Obrador</h3><p class="note" style="margin:4px 0 10px">Metas: cumplimiento ≥ 98 %, sobrante ≤ 5 % de lo producido, foto en todos los registros y registro antes de las 10 a. m. del día de venta.</p><div class="scroll"><table id="x-obr"></table></div></div>
+  <div class="card"><h3>Obrador</h3><p class="note" style="margin:4px 0 10px">Metas: cumplimiento ≥ 98 %, merma ≤ 5 % de lo producido, foto en todos los registros y registro antes de las 10 a. m. del día de venta.</p><div class="scroll"><table id="x-obr"></table></div></div>
   <div class="card"><h3>Compras e inventario</h3><p class="note" style="margin:4px 0 10px">Metas: pedidos aprobados antes del lunes, recepción registrada el mismo día y exactitud del conteo ≥ 97 % (diferencia contra el sistema, a costo).</p><div class="scroll"><table id="x-com"></table></div></div>
   <div class="card"><h3>Qué hacer con cada resultado</h3><div id="x-plan" class="alerts"></div></div>
 </section>
@@ -363,6 +363,12 @@ details summary{min-height:32px}
     <tr><td>Reporte semanal</td><td><code class="k">GET /make/reporte</code></td></tr></table>
     <p style="margin:12px 0 6px"><b>URL base:</b> <code class="k" id="m-url"></code></p>
     <div class="controls"><button class="ghost" id="m-key">Mostrar clave de API</button><code class="k" id="m-keyv" hidden></code></div></div>
+  <div class="card"><h3>Usuarios y claves</h3><p class="note">Solo administración. Si cambias la clave de alguien, su sesión se cierra y entra con la nueva. Anota la clave antes de salir de esta pantalla.</p>
+    <div class="scroll"><table id="u-table" class="stack"></table></div>
+    <h3 style="margin:16px 0 8px">Agregar usuario</h3>
+    <div class="controls"><label class="f">Nombre<input type="text" id="u-nom" placeholder="Ej. Ana Torres"></label><label class="f">Usuario<input type="text" id="u-usr" placeholder="ej. ana" autocapitalize="off"></label>
+      <label class="f">Rol<select id="u-rol"><option value="obrador">Obrador</option><option value="compras">Compras</option><option value="admin">Administración</option></select></label>
+      <label class="f">Clave<input type="text" id="u-cla" placeholder="mín. 6 caracteres" autocapitalize="off"></label><button class="ghost" id="u-gen">Generar clave</button><button id="u-add">Agregar</button></div></div>
   <div class="card"><h3>Bitácora</h3><p class="note">Últimos 30 movimientos: cargas, envíos de Make y cambios.</p><div class="scroll"><table id="m-bit"></table></div></div>
 </section>
 

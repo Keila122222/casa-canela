@@ -1,5 +1,5 @@
 // Casa Canela · service worker: la app abre rápido y sin señal; los datos vienen de la API (y la app guarda una copia).
-const V = 'cc-v4b';
+const V = 'cc-v4e';
 const SHELL = ['/', '/index.html', '/app.js', '/engine.js', '/cal.js', '/demo-semana.js', '/logo.svg', '/logo-icono.svg', '/manifest.json', '/icons/icon-192.png', '/icons/icon-512.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL).catch(() => { }))); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== V).map(x => caches.delete(x)))).then(() => self.clients.claim())); });

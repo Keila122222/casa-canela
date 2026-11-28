@@ -188,8 +188,8 @@ function alertas(PJ) {
     if (pl && pdc / pl < 0.98) out.push(['warn', `Cumplimiento de producción: ${P(pdc / pl)} (semana del ${rango(s0)})`, `Se produjo menos de lo ordenado en ${bajo.map(o => esc(o.p.nombre) + ' (' + P(o.c, 0) + ')').join(', ')}. Cada unidad no producida es una venta que se puede perder.`,
       plan([['Revisar con el jefe de obrador por qué no se completó (personal, insumos, equipo)', 'Administración', 'Lunes'], ['Si faltó insumo, revisar la alerta de stock crítico y el día de pedido', 'Compras', 'Esta semana'], ['Registrar la causa en la nota del registro de producción', 'Jefe de obrador', 'Cada día']])]);
     const sob = E.PR.map((p, i) => { const s = sem.filter(r => r.producto_id === p.id).reduce((a, r) => a + r.sobrante, 0); return { p, s, v: s * E.PC[i] } }).sort((a, b) => b.v - a.v);
-    const tv = sob.reduce((a, o) => a + o.v, 0); if (tv > 0) out.push(['warn', `Sobrante al cierre: ${S(tv)} a costo en la semana`, `Lo que más sobró: ${sob.slice(0, 3).map(o => esc(o.p.nombre) + ' (' + N(o.s) + ' und, ' + S(o.v) + ')').join(', ')}.`,
-      plan([[`Bajar el stock de seguridad de ${esc(sob[0].p.nombre)} o producirlo en dos tandas (mañana y tarde)`, 'Jefe de obrador', 'Próxima semana'], ['Vender el sobrante de tortas al día siguiente si su vida útil lo permite; lo de 1 día, ofrecerlo en combo al cierre', 'Encargado de local', 'Desde hoy'], ['Revisar si coincide con días atípicos no marcados', 'Administración', 'Esta semana']])]);
+    const tv = sob.reduce((a, o) => a + o.v, 0); if (tv > 0) out.push(['warn', `Merma al cierre: ${S(tv)} a costo en la semana`, `Mayor merma: ${sob.slice(0, 3).map(o => esc(o.p.nombre) + ' (' + N(o.s) + ' und, ' + S(o.v) + ')').join(', ')}.`,
+      plan([[`Bajar el stock de seguridad de ${esc(sob[0].p.nombre)} o producirlo en dos tandas (mañana y tarde)`, 'Jefe de obrador', 'Próxima semana'], ['Vender las tortas que quedan al día siguiente si su vida útil lo permite; lo de 1 día, ofrecerlo en combo al cierre', 'Encargado de local', 'Desde hoy'], ['Revisar si coincide con días atípicos no marcados', 'Administración', 'Esta semana']])]);
   }
   // día fuerte
   const peak = days7.map(d => ({ d, s: E.salesDay(PJ, d) })).sort((a, b) => b.s - a.s)[0];
@@ -214,8 +214,8 @@ function alertas(PJ) {
     plan([['Confirmar que el efecto estimado tiene sentido (Proyección › Calendario)', 'Gerencia', 'Una semana antes'], ['Ajustar turnos del obrador y de salón para esos días', 'Jefe de obrador y locales', 'Al armar horarios'], ['Comprar con anticipación los insumos de los productos de temporada', 'Compras', 'Pedido de la semana anterior']])]);
   // food cost real vs teórico del último periodo
   const per = fcPeriodos(); if (per.length) { const r = fcReal(per[0]); const g = r.fcR - r.fcT;
-    if (g > 0.015) out.push([g > 0.03 ? 'bad' : 'warn', `Food cost real ${P(r.fcR)} vs. teórico ${P(r.fcT)} (${fmtD(addD(per[0].a.fecha, 1))} al ${fmtD(per[0].b.fecha)})`, `Se gastaron ${S(r.vR - r.vT)} más de lo que indican las recetas: ${S(r.sob)} es sobrante registrado y ${S(Math.max(0, r.vR - r.vT - r.sob))} no tiene explicación. Mayor diferencia: ${r.rows.slice(0, 3).map(x => esc(x.i.nombre)).join(', ')}.`,
-      plan([['Producir en tandas y ajustar el stock de seguridad de lo que más sobra', 'Jefe de obrador', 'Próxima semana'], [`Pesar las porciones de ${esc(r.rows[0].i.nombre.toLowerCase())} contra la receta durante 3 días`, 'Jefe de obrador', 'Esta semana'], ['Revisar recepción y almacenamiento (vencidos, mermas, consumo de personal)', 'Compras', 'Esta semana']])]); }
+    if (g > 0.015) out.push([g > 0.03 ? 'bad' : 'warn', `Food cost real ${P(r.fcR)} vs. teórico ${P(r.fcT)} (${fmtD(addD(per[0].a.fecha, 1))} al ${fmtD(per[0].b.fecha)})`, `Se gastaron ${S(r.vR - r.vT)} más de lo que indican las recetas: ${S(r.sob)} es merma registrada y ${S(Math.max(0, r.vR - r.vT - r.sob))} no tiene explicación. Mayor diferencia: ${r.rows.slice(0, 3).map(x => esc(x.i.nombre)).join(', ')}.`,
+      plan([['Producir en tandas y ajustar el stock de seguridad de los productos con más merma', 'Jefe de obrador', 'Próxima semana'], [`Pesar las porciones de ${esc(r.rows[0].i.nombre.toLowerCase())} contra la receta durante 3 días`, 'Jefe de obrador', 'Esta semana'], ['Revisar recepción y almacenamiento (vencidos, mermas, consumo de personal)', 'Compras', 'Esta semana']])]); }
   return out;
 }
 
@@ -281,7 +281,7 @@ function paraHoy() {
 function plata() {
   const rows = []; const pr = prodReal(); if (pr.length) {
     const ult = pr.reduce((a, r) => r.fecha > a ? r.fecha : a, pr[0].fecha), s0 = lunesDe(ult), sem = pr.filter(r => r.fecha >= s0 && r.fecha <= addD(s0, 6));
-    E.PR.forEach((p, i) => { const sb = sem.filter(r => r.producto_id === p.id).reduce((a, r) => a + r.sobrante, 0); if (sb) rows.push([`Sobrante de ${p.nombre}`, sb * E.PC[i], `${N(sb)} und sin vender`, 'Producir en tandas o bajar su stock de seguridad', '#produccion']); });
+    E.PR.forEach((p, i) => { const sb = sem.filter(r => r.producto_id === p.id).reduce((a, r) => a + r.sobrante, 0); if (sb) rows.push([`Merma de ${p.nombre}`, sb * E.PC[i], `${N(sb)} und perdidas`, 'Producir en tandas o bajar su stock de seguridad', '#produccion']); });
   }
   const per = fcPeriodos(); if (per.length) { const r = fcReal(per[0]); const ne = r.vR - r.vT - r.sob; if (ne > 0) rows.push(['Merma sin explicar en almacén', ne, `entre conteos del ${fmtD(per[0].a.fecha)} y ${fmtD(per[0].b.fecha)}`, 'Revisar ' + r.rows.slice(0, 2).map(x => x.i.nombre.toLowerCase()).join(' y '), '#costos']); }
   const PJ = projWeek(nextMonday()); E.PR.forEach((p, i) => { if (E.FC[i] > 0.28) { const u = days7.reduce((a, d) => a + E.uDay(PJ, d, i), 0); const v = u * (E.PC[i] - 0.28 * E.NET[i]); if (v > 0) rows.push([`Food cost alto en ${p.nombre}`, v, `${P(E.FC[i])} vs. meta 28 %`, `Precio de ${S(Math.ceil(E.PC[i] / 0.28 * 1.18 * 2) / 2, 2)} o ajustar receta`, '#costos']); } });
@@ -424,16 +424,16 @@ function rProd() {
   const pr = prodReal().filter(r => r.fecha >= H[0] && r.fecha <= H[6]);
   const pl = pr.reduce((a, r) => a + r.planificado, 0), pdc = pr.reduce((a, r) => a + r.producido, 0), sbv = pr.reduce((a, r) => a + r.sobrante * (E.PC[E.PRI[r.producto_id]] || 0), 0), fotos = pr.filter(r => r.foto_url).length;
   let wk = 0; days7.forEach(d => E.production(PJ, d).prods.forEach(o => wk += o.porc));
-  $('#o-kpis').innerHTML = kpiHTML([['A producir en la semana', N(wk), 'unidades y porciones'], ['Cumplimiento registrado', pl ? P(pdc / pl) : '—', pl ? `${N(pdc)} de ${N(pl)}` : 'sin registros aún'], ['Sobrante al cierre (a costo)', pl ? S(sbv) : '—', 'producido que no se vendió'], ['Registros con foto', N(fotos), `de ${N(pr.length)} registros`]]);
+  $('#o-kpis').innerHTML = kpiHTML([['A producir en la semana', N(wk), 'unidades y porciones'], ['Cumplimiento registrado', pl ? P(pdc / pl) : '—', pl ? `${N(pdc)} de ${N(pl)}` : 'sin registros aún'], ['Merma al cierre (a costo)', pl ? S(sbv) : '—', 'producido que no se vendió'], ['Registros con foto', N(fotos), `de ${N(pr.length)} registros`]]);
   const regOk = ST.day < 7 && (USER.rol === 'admin' || USER.rol === 'obrador');
   $('#o-regc').hidden = ST.day === 7;
   if (ST.day < 7) {
     const f = H[ST.day]; $('#o-t3').textContent = 'Registro de producción real — ' + fmtLargo(f);
     ST.fotos = {}; $('#o-saveall').disabled = $('#o-saveall2').disabled = !regOk; $$('.save-all').forEach(b => b.classList.remove('dirty')); $('#o-pend').textContent = regOk ? '' : 'Solo el obrador o administración pueden registrar.';
-    $('#o-reg').innerHTML = '<thead><tr><th>Producto</th><th class="n">Planificado</th><th class="n">Producido</th><th class="n">Sobrante al cierre</th><th>Foto</th><th>Estado</th></tr></thead><tbody>' + prods.map(o => {
+    $('#o-reg').innerHTML = '<thead><tr><th>Producto</th><th class="n">Planificado</th><th class="n">Producido</th><th class="n">Merma</th><th>Foto</th><th>Estado</th></tr></thead><tbody>' + prods.map(o => {
       const r = prodReal().find(x => x.fecha === f && x.producto_id === o.p.id); const c = r ? r.producido / (r.planificado || 1) : null;
-      return `<tr data-reg="${o.p.id}" data-plan="${o.porc}"><td data-l="Producto"><b>${esc(o.p.nombre)}</b></td><td class="n" data-l="Planificado">${N(o.porc)}</td><td class="n" data-l="Producido"><input class="xs" type="number" min="0" data-f="producido" value="${r ? r.producido : ''}" placeholder="${o.porc}" ${regOk ? '' : 'disabled'} aria-label="Producido de ${esc(o.p.nombre)}"></td><td class="n" data-l="Sobrante"><input class="xs" type="number" min="0" data-f="sobrante" value="${r ? r.sobrante : ''}" placeholder="0" ${regOk ? '' : 'disabled'} aria-label="Sobrante de ${esc(o.p.nombre)}"></td>
-        <td data-l="Foto">${r && r.foto_url ? `<a href="${esc(r.foto_url)}" target="_blank" rel="noopener"><img class="thumb" src="${esc(r.foto_url)}" alt="Foto de ${esc(o.p.nombre)}"></a>` : ''}<span data-fprev></span>${regOk ? `<label class="btn ghost" style="min-height:36px;padding:5px 10px;font-size:13px;display:inline-flex;align-items:center;margin-top:4px">${r && r.foto_url ? 'Cambiar foto' : 'Tomar foto'}<input type="file" accept="image/*" capture="environment" data-foto hidden></label>` : ''}</td>
+      return `<tr data-reg="${o.p.id}" data-plan="${o.porc}"><td data-l="Producto"><b>${esc(o.p.nombre)}</b></td><td class="n" data-l="Planificado">${N(o.porc)}</td><td class="n" data-l="Producido"><input class="xs" type="number" min="0" data-f="producido" value="${r ? r.producido : ''}" placeholder="${o.porc}" ${regOk ? '' : 'disabled'} aria-label="Producido de ${esc(o.p.nombre)}"></td><td class="n" data-l="Merma"><input class="xs" type="number" min="0" data-f="sobrante" value="${r ? r.sobrante : ''}" placeholder="0" ${regOk ? '' : 'disabled'} aria-label="Merma de ${esc(o.p.nombre)}"></td>
+        <td data-l="Foto"><div class="fcell">${r && r.foto_url ? `<a href="${esc(r.foto_url)}" target="_blank" rel="noopener" data-factual><img class="thumb" src="${esc(r.foto_url)}" alt="Foto de ${esc(o.p.nombre)}"></a>` : ''}<span data-fprev></span>${regOk ? `<span class="fbtns"><label class="btn ghost btn-sm">${r && r.foto_url ? 'Cambiar' : '📷 Tomar foto'}<input type="file" accept="image/*" capture="environment" data-foto hidden></label>${r && r.foto_url ? `<button class="ghost btn-sm" data-fdel>Borrar</button>` : ''}</span>` : ''}</div></td>
         <td data-l="Estado">${r ? `<span class="badge ${c >= 0.98 ? 'ok-b' : 'warn-b'}">${c >= 0.98 ? 'Completo' : 'Incompleto ' + P(c, 0)}</span><div class="note">${esc(r.usuario || '')} · ${esc(r.actualizado || '')}</div>` : '<span class="badge">Pendiente</span>'}</td>
 </tr>`;
     }).join('') + '</tbody>';
@@ -460,12 +460,29 @@ function explainBase(b, g) {
   const B = E.BAS[b], f = g / E.baseYield(B);
   $('#o-exp').innerHTML = `<div class="explain"><h3>${esc(B.nombre)} — ${N(Math.ceil(g / 10) * 10 / 1000, 2)} kg (${N(f, 2)} tandas)</h3><table><tr><th>Insumo</th><th class="n">Cantidad</th></tr>${Object.entries(B.ing).map(([i, q]) => `<tr><td>${esc(E.INS[i].nombre)}</td><td class="n">${N(q * f, 0)} ${E.INS[i].um}</td></tr>`).join('')}</table><p class="note">Merma de proceso considerada: ${B.merma} %.</p></div>`;
 }
-async function fileToB64(file, max = 1280) {
-  const img = await createImageBitmap(file).catch(() => null);
-  if (!img) { const b = await file.arrayBuffer(); let s = ''; new Uint8Array(b).forEach(c => s += String.fromCharCode(c)); return { base64: btoa(s), tipo: file.type || 'image/jpeg' }; }
-  const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); const url = c.toDataURL('image/jpeg', 0.82); return { base64: url.split(',')[1], tipo: 'image/jpeg' };
+// Fotos de evidencia: marca de agua con lo que dice el registro + huella para que la misma foto no se use dos veces
+const ahoraTxt = () => { const d = new Date(Date.now() - 5 * 3600e3).toISOString(); return `${d.slice(8, 10)}/${d.slice(5, 7)}/${d.slice(0, 4)} ${d.slice(11, 16)}`; };
+async function huella(file) { try { const h = await crypto.subtle.digest('SHA-256', await file.arrayBuffer()); return [...new Uint8Array(h)].map(x => x.toString(16).padStart(2, '0')).join(''); } catch { return null; } }
+function estampar(ctx, w, h, lineas) {
+  ctx.save(); ctx.translate(w / 2, h * 0.4); ctx.rotate(-Math.PI / 9); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${Math.round(w / 9)}px Georgia, serif`; ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.strokeStyle = 'rgba(59,36,24,.18)'; ctx.lineWidth = Math.max(1, w / 500);
+  ctx.strokeText('CASA CANELA', 0, 0); ctx.fillText('CASA CANELA', 0, 0); ctx.restore();
+  const fs = Math.max(13, Math.round(w / 34)), lh = fs * 1.38, pad = Math.round(fs * 0.7), band = lineas.length * lh + pad * 2;
+  ctx.fillStyle = 'rgba(59,36,24,.82)'; ctx.fillRect(0, h - band, w, band); ctx.fillStyle = '#D69A3A'; ctx.fillRect(0, h - band, w, Math.max(3, fs / 5));
+  ctx.textBaseline = 'top'; ctx.textAlign = 'left';
+  lineas.forEach((t, i) => { ctx.font = `${i === 0 ? 700 : 500} ${fs}px Arial, sans-serif`; ctx.fillStyle = i === 0 ? '#ffffff' : '#F5EBDD'; let x = String(t); while (x.length > 4 && ctx.measureText(x).width > w - pad * 2) x = x.slice(0, -2) + '…'; ctx.fillText(x, pad, h - band + pad + i * lh); });
 }
+async function fileToB64(file, max = 1280, marca = null) {
+  const hash = await huella(file);
+  const img = await createImageBitmap(file).catch(() => null);
+  if (!img) { const b = await file.arrayBuffer(); let s = ''; new Uint8Array(b).forEach(c => s += String.fromCharCode(c)); return { base64: btoa(s), tipo: file.type || 'image/jpeg', hash }; }
+  const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, c.width, c.height); if (marca) estampar(ctx, c.width, c.height, marca);
+  const url = c.toDataURL('image/jpeg', 0.82); return { base64: url.split(',')[1], tipo: 'image/jpeg', hash };
+}
+const fotoVieja = f => f && f.lastModified && Date.now() - f.lastModified > 3 * 3600e3;
+const marcaProd = (r, f) => { const p = E.PR[E.PRI[r.producto_id]]; return [`Casa Canela · ${p ? p.nombre : r.producto_id}`, `Producido ${N(r.producido)} de ${N(r.planificado)} · Merma ${N(r.sobrante)}`, `Venta del ${fmtLargo(f)} · ${ahoraTxt()} · ${USER.nombre}`]; };
+const marcaPed = pe => [`Casa Canela · Recepción ${pe.proveedor}`, `Pedido semana del ${fmtD(pe.semana)} · ${pe.items.length} ítems · ${S(+pe.total, 2)}`, `Recibido ${ahoraTxt()} · ${USER.nombre}`];
 function marcarPend() {
   const n = $$('#o-reg tr.dirty').length, nf = Object.keys(ST.fotos).length;
   $('#o-pend').textContent = n ? `${n} productos con cambios${nf ? ', ' + nf + ' fotos' : ''} sin guardar.` : '';
@@ -481,7 +498,7 @@ async function guardarTodo() {
   try {
     let hechos = 0;
     for (const lote of lotes) { if (!lote.length) continue;
-      for (const r of lote) if (ST.fotos[r.producto_id]) r.foto = await fileToB64(ST.fotos[r.producto_id]);
+      for (const r of lote) if (ST.fotos[r.producto_id]) r.foto = await fileToB64(ST.fotos[r.producto_id], 1280, marcaProd(r, f));
       let res; try { if (!navigator.onLine) throw new TypeError('sin señal'); res = await api('/produccion-real', { method: 'POST', body: JSON.stringify({ fecha: f, registros: lote }) }); }
       catch (x) { if (!esRed(x)) throw x; await COLA.put({ id: Date.now() + '-' + Math.random().toString(36).slice(2, 7), fecha: f, registros: lote }); res = { fotos: {} }; ST.encolado = true; }
       const now = new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 16).replace('T', ' ');
@@ -554,7 +571,7 @@ function rCompras() {
     const seg = pe ? [`Aprobó ${esc(nomU(pe.aprobado_por))} · ${esc(pe.aprobado_en || '')}`, pe.enviado_en ? 'Enviado ' + esc(pe.enviado_en) : '', pe.fecha_recepcion ? `Recibió ${esc(nomU(pe.recibido_por))} el ${fmtD(pe.fecha_recepcion)}` : ''].filter(Boolean).join('<br>') : '';
     const btn = !can ? '' : !pe ? `<button class="btn-sm" data-apr="${esc(prov)}">Aprobar</button>` : pe.estado === 'recibido' ? '' : `${pe.estado === 'aprobado' ? `<button class="ghost btn-sm" data-pan="${pe.id}">Anular</button> ` : ''}<label class="btn btn-sm" style="display:inline-flex;align-items:center;cursor:pointer">📷 Recibido<input type="file" accept="image/*" capture="environment" data-prf="${pe.id}" hidden></label> <button class="ghost btn-sm" data-prc="${pe.id}" title="Registrar sin foto">Sin foto</button>`;
     const diff = pe && g && pe.estado === 'aprobado' && Math.abs(+pe.total - g.total) > 1 ? `<div class="note">El sugerido cambió a ${S(g.total, 2)}. <a href="#compras" data-apr="${esc(prov)}" style="color:var(--canela)">Volver a aprobar</a></div>` : '';
-    const ev = pe && pe.foto_url ? `<a href="${esc(pe.foto_url)}" target="_blank" rel="noopener"><img class="thumb" src="${esc(pe.foto_url)}" alt="Guía de ${esc(prov)}"></a>` : '';
+    const ev = (pe && pe.foto_url ? `<a href="${esc(pe.foto_url)}" target="_blank" rel="noopener"><img class="thumb" src="${esc(pe.foto_url)}" alt="Guía de ${esc(prov)}"></a>` : '') + (can && pe && pe.estado === 'recibido' ? `<span class="fbtns"><label class="btn ghost btn-sm">${pe.foto_url ? 'Cambiar foto' : '📷 Agregar foto'}<input type="file" accept="image/*" capture="environment" data-pcf="${pe.id}" hidden></label>${pe.foto_url ? `<button class="ghost btn-sm" data-pbf="${pe.id}">Borrar foto</button>` : ''}</span>` : '');
     return `<tr><td>${esc(prov)}</td><td class="n">${N(nItems)}</td><td class="n">${S(tot, 2)}</td><td>${st}${diff}</td><td class="note">${seg}${ev}</td><td style="white-space:nowrap">${btn}</td></tr>`;
   }).join('') + (filas.length ? '' : '<tr><td colspan="6" class="note">No hay nada que pedir esa semana.</td></tr>');
   $('#c-all').disabled = !can || !filas.some(f => !f.pe);
@@ -575,7 +592,19 @@ async function aprobar(provs) {
   } catch (x) { toast(x.message); }
 }
 async function accionPedido(id, accion, file) {
-  try { const body = { id, accion, fecha: hoyLima() }; if (file) { toast('Subiendo foto…'); body.foto = await fileToB64(file); } await api('/pedidos', { method: 'PATCH', body: JSON.stringify(body) }); await loadData('Actualizando…'); toast(accion === 'recibir' ? 'Recepción registrada: el stock se actualizó' : 'Pedido anulado'); } catch (x) { toast(x.message); }
+  const MSG = { recibir: 'Recepción registrada: el stock se actualizó', anular: 'Pedido anulado', foto: 'Foto de la guía actualizada', borrar_foto: 'Foto borrada' };
+  try { const body = { id, accion, fecha: hoyLima() }; const pe = (RAW.pedidos || []).find(x => x.id === id);
+    if (file) { toast('Subiendo foto…'); body.foto = await fileToB64(file, 1280, pe ? marcaPed(pe) : null); }
+    await api('/pedidos', { method: 'PATCH', body: JSON.stringify(body) }); await loadData('Actualizando…'); toast(MSG[accion] || 'Listo'); } catch (x) { toast(x.message); }
+}
+const dobleToque = (b, txt) => { if (b.dataset.ok === '1') return true; b.dataset.ok = '1'; const t0 = b.textContent; b.textContent = txt; setTimeout(() => { b.dataset.ok = ''; b.textContent = t0; }, 4000); return false; };
+async function borrarFotoProd(tr) {
+  const f = projWeek(lunesDe(ST.cal['o-dia'].value)).dates[ST.day], pid = tr.dataset.reg;
+  try { await api('/produccion-real/foto', { method: 'POST', body: JSON.stringify({ fecha: f, producto_id: pid, accion: 'borrar' }) });
+    const ex = RAW.produccion_real.find(x => x.fecha === f && x.producto_id === pid); if (ex) ex.foto_url = null;
+    const keep = {}; $$('#o-reg tr.dirty').forEach(t => keep[t.dataset.reg] = [t.querySelector('[data-f=producido]').value, t.querySelector('[data-f=sobrante]').value]); const fk = { ...ST.fotos };
+    rProd(); Object.entries(keep).forEach(([k, v]) => { const t = $(`#o-reg tr[data-reg="${k}"]`); if (t) { t.querySelector('[data-f=producido]').value = v[0]; t.querySelector('[data-f=sobrante]').value = v[1]; t.classList.add('dirty'); } }); ST.fotos = fk; marcarPend();
+    toast('Foto borrada'); } catch (x) { toast(esRed(x) ? 'Sin señal: para borrar la foto necesitas conexión' : x.message); }
 }
 
 // ---------- Food cost real vs teórico
@@ -602,11 +631,11 @@ function rFcReal() {
   if (!x) { $('#f-sub').textContent = 'Hacen falta al menos dos conteos de inventario para calcularlo.'; $('#f-kpis').innerHTML = ''; $('#f-table').innerHTML = ''; $('#f-exp').innerHTML = ''; return; }
   const r = fcReal(x), gap = r.vR - r.vT, noExp = gap - r.sob;
   $('#f-sub').textContent = `Del ${fmtLargo(r.f0)} al ${fmtLargo(r.f1)}: entre el conteo del ${fmtD(x.a.fecha)} (${nomU(x.a.usuario)}) y el del ${fmtD(x.b.fecha)} (${nomU(x.b.usuario)}). Venta sin IGV ${S(r.neto)}; compras recibidas ${S(r.vC)}.`;
-  $('#f-kpis').innerHTML = kpiHTML([['Food cost teórico', P(r.fcT), S(r.vT) + ' según recetas'], ['Food cost real', `<span style="color:${fcCol(r.fcR)}">${P(r.fcR)}</span>`, S(r.vR) + ' consumidos de verdad'], ['Brecha', (gap >= 0 ? '+' : '') + S(gap), `${(r.fcR - r.fcT) >= 0 ? '+' : ''}${N((r.fcR - r.fcT) * 100, 1)} puntos de food cost`], ['De dónde sale la brecha', S(r.sob) + ' sobrante', S(Math.max(0, noExp)) + ' sin explicar (merma, porciones, pérdidas)', '20px']]);
+  $('#f-kpis').innerHTML = kpiHTML([['Food cost teórico', P(r.fcT), S(r.vT) + ' según recetas'], ['Food cost real', `<span style="color:${fcCol(r.fcR)}">${P(r.fcR)}</span>`, S(r.vR) + ' consumidos de verdad'], ['Brecha', (gap >= 0 ? '+' : '') + S(gap), `${(r.fcR - r.fcT) >= 0 ? '+' : ''}${N((r.fcR - r.fcT) * 100, 1)} puntos de food cost`], ['De dónde sale la brecha', S(r.sob) + ' merma registrada', S(Math.max(0, noExp)) + ' sin explicar (porciones, pérdidas no registradas)', '20px']]);
   $('#f-table').innerHTML = '<tr><th>Insumo</th><th class="n">Inicial</th><th class="n">Compras</th><th class="n">Final</th><th class="n">Consumo real</th><th class="n">Según recetas</th><th class="n">Diferencia</th><th class="n">Diferencia S/</th></tr>' + r.rows.filter(z => z.real || z.t).map(z => { const u = uKg(z.i), q = v => N(v / 1000, 2); return `<tr><td>${esc(z.i.nombre)}</td><td class="n">${q(z.a)}</td><td class="n">${q(z.c)}</td><td class="n">${q(z.z)}</td><td class="n">${q(z.real)} ${u}</td><td class="n">${q(z.t)} ${u}</td><td class="n ${z.d > 0 ? 'diff-neg' : 'diff-pos'}">${z.d > 0 ? '+' : ''}${q(z.d)} (${z.t ? (z.d / z.t * 100 >= 0 ? '+' : '') + N(z.d / z.t * 100, 0) + ' %' : '—'})</td><td class="n"><b>${S(z.vD, 2)}</b></td></tr>`; }).join('') + `<tr class="tot"><td>Total</td><td></td><td class="n">${S(r.vC)}</td><td></td><td class="n">${S(r.vR)}</td><td class="n">${S(r.vT)}</td><td></td><td class="n">${S(gap)}</td></tr>`;
   const top = r.rows.slice(0, 3);
   $('#f-exp').innerHTML = `<div class="alerts" style="margin-bottom:12px"><div class="al ${r.fcR - r.fcT > 0.03 ? 'bad' : 'warn'}"><h4>Plan de acción</h4><p>Lo que más explica la brecha: ${top.map(z => `${esc(z.i.nombre)} (${S(z.vD)})`).join(', ')}.</p><table><tr><th>Qué hacer</th><th>Responsable</th><th>Plazo</th></tr>
-    <tr><td>Bajar el sobrante: producir en tandas y revisar el stock de seguridad de los productos que más sobran (${S(r.sob)} en el periodo)</td><td>Jefe de obrador</td><td>Próxima semana</td></tr>
+    <tr><td>Bajar la merma: producir en tandas y revisar el stock de seguridad de los productos con más merma (${S(r.sob)} en el periodo)</td><td>Jefe de obrador</td><td>Próxima semana</td></tr>
     <tr><td>Pesar ${esc(top[0].i.nombre.toLowerCase())} en cada receta durante 3 días y comparar contra el recetario</td><td>Jefe de obrador</td><td>Esta semana</td></tr>
     <tr><td>Revisar recepción, rotación y vencimientos en almacén; registrar mermas al momento</td><td>Compras</td><td>Esta semana</td></tr>
     <tr><td>Repetir el conteo de los 5 insumos con más diferencia para descartar error de conteo</td><td>Compras</td><td>Próximo conteo</td></tr></table></div></div>`;
@@ -620,7 +649,7 @@ function rInd() {
   const us = [...new Set(pr.map(r => r.usuario))];
   const obr = us.map(u => { const rr = pr.filter(r => r.usuario === u || nomU(r.usuario) === u); const pl = rr.reduce((a, r) => a + r.planificado, 0), pdc = rr.reduce((a, r) => a + r.producido, 0), sb = rr.reduce((a, r) => a + r.sobrante, 0), sv = rr.reduce((a, r) => a + r.sobrante * (E.PC[E.PRI[r.producto_id]] || 0), 0), fo = rr.filter(r => r.foto_url).length, at = rr.filter(r => (r.actualizado || '') <= r.fecha + ' 10:00').length;
     return { u, n: rr.length, c: pl ? pdc / pl : 0, sp: pdc ? sb / pdc : 0, sv, fp: rr.length ? fo / rr.length : 0, tp: rr.length ? at / rr.length : 0 }; }).sort((a, b) => nomU(a.u).localeCompare(nomU(b.u)));
-  $('#x-obr').innerHTML = '<tr><th>Persona</th><th class="n">Registros</th><th class="n">Cumplimiento</th><th class="n">Sobrante</th><th class="n">Sobrante a costo</th><th class="n">Con foto</th><th class="n">A tiempo</th></tr>' + (obr.length ? obr.map(o => `<tr><td><b>${esc(nomU(o.u))}</b></td><td class="n">${N(o.n)}</td><td class="n"><span class="badge ${semaf(o.c >= 0.98, o.c >= 0.95)}">${P(o.c)}</span></td><td class="n"><span class="badge ${semaf(o.sp <= 0.05, o.sp <= 0.08)}">${P(o.sp)}</span></td><td class="n">${S(o.sv)}</td><td class="n"><span class="badge ${semaf(o.fp >= 0.99, o.fp >= 0.85)}">${pct(o.fp)}</span></td><td class="n"><span class="badge ${semaf(o.tp >= 0.95, o.tp >= 0.8)}">${pct(o.tp)}</span></td></tr>`).join('') : '<tr><td colspan="7" class="note">Sin registros de producción esa semana.</td></tr>');
+  $('#x-obr').innerHTML = '<tr><th>Persona</th><th class="n">Registros</th><th class="n">Cumplimiento</th><th class="n">Merma</th><th class="n">Merma a costo</th><th class="n">Con foto</th><th class="n">A tiempo</th></tr>' + (obr.length ? obr.map(o => `<tr><td><b>${esc(nomU(o.u))}</b></td><td class="n">${N(o.n)}</td><td class="n"><span class="badge ${semaf(o.c >= 0.98, o.c >= 0.95)}">${P(o.c)}</span></td><td class="n"><span class="badge ${semaf(o.sp <= 0.05, o.sp <= 0.08)}">${P(o.sp)}</span></td><td class="n">${S(o.sv)}</td><td class="n"><span class="badge ${semaf(o.fp >= 0.99, o.fp >= 0.85)}">${pct(o.fp)}</span></td><td class="n"><span class="badge ${semaf(o.tp >= 0.95, o.tp >= 0.8)}">${pct(o.tp)}</span></td></tr>`).join('') : '<tr><td colspan="7" class="note">Sin registros de producción esa semana.</td></tr>');
   const ps = peds(), inv = (RAW.inventarios || []);
   const cu = (RAW.usuarios || []).filter(x => x.rol === 'compras').map(x => x.usuario);
   ps.forEach(p => [p.aprobado_por, p.recibido_por].forEach(u => { if (u && !cu.includes(u) && (RAW.usuarios || []).some(x => x.usuario === u && x.rol !== 'obrador')) cu.push(u); }));
@@ -633,12 +662,12 @@ function rInd() {
   }).filter(o => o.ap || o.rc || o.cs);
   $('#x-com').innerHTML = '<tr><th>Persona</th><th class="n">Pedidos aprobados</th><th class="n">A tiempo</th><th class="n">Recepciones registradas</th><th class="n">Conteos</th><th class="n">Exactitud del conteo</th></tr>' + (com.length ? com.map(o => `<tr><td><b>${esc(nomU(o.u))}</b></td><td class="n">${N(o.ap)}</td><td class="n">${o.ap ? `<span class="badge ${semaf(o.apT === o.ap, o.apT >= o.ap * 0.8)}">${o.apT} de ${o.ap}</span>` : '—'}</td><td class="n">${N(o.rc)}</td><td class="n">${o.cs ? N(o.cs) + ' <span class="note">(' + o.csF + ')</span>' : '—'}</td><td class="n">${o.ex == null ? '—' : `<span class="badge ${semaf(o.ex >= 0.97, o.ex >= 0.94)}">${P(o.ex)}</span>`}</td></tr>`).join('') : '<tr><td colspan="6" class="note">Sin movimientos de compras esa semana.</td></tr>');
   const tot = pr.reduce((a, r) => a + r.planificado, 0), tp = pr.reduce((a, r) => a + r.producido, 0);
-  $('#x-kpis').innerHTML = kpiHTML([['Personas con registros', N(obr.length + com.length)], ['Cumplimiento del obrador', tot ? P(tp / tot) : '—'], ['Sobrante de la semana', S(obr.reduce((a, o) => a + o.sv, 0))], ['Pedidos aprobados', N(ps.filter(p => p.semana >= w && p.semana <= w1).length)]]);
+  $('#x-kpis').innerHTML = kpiHTML([['Personas con registros', N(obr.length + com.length)], ['Cumplimiento del obrador', tot ? P(tp / tot) : '—'], ['Merma de la semana', S(obr.reduce((a, o) => a + o.sv, 0))], ['Pedidos aprobados', N(ps.filter(p => p.semana >= w && p.semana <= w1).length)]]);
   const plans = [];
   obr.forEach(o => {
     if (o.tp < 0.95) plans.push(['warn', `${esc(nomU(o.u))}: registra tarde (${pct(o.tp)} a tiempo)`, 'Si el registro llega después de abrir, no se puede corregir la producción del día.', [['Registrar apenas sale cada tanda, desde el celular', esc(nomU(o.u)), 'Desde mañana'], ['Revisar juntos los días que se registró tarde', 'Jefe de obrador', 'Esta semana']]]);
     if (o.fp < 0.99) plans.push(['warn', `${esc(nomU(o.u))}: faltan fotos (${pct(o.fp)} con foto)`, 'La foto es la evidencia de calidad y cantidad.', [['Subir foto en cada registro; el botón abre la cámara del celular', esc(nomU(o.u)), 'Desde mañana']]]);
-    if (o.sp > 0.05) plans.push(['bad', `${esc(nomU(o.u))}: sobrante alto (${P(o.sp)}, ${S(o.sv)})`, 'Lo producido que no se vende es costo perdido.', [['Pasar a producción por tandas en los productos que más sobran', 'Jefe de obrador', 'Próxima semana'], ['Revisar si el stock de seguridad está muy alto', 'Administración', 'Esta semana']]]);
+    if (o.sp > 0.05) plans.push(['bad', `${esc(nomU(o.u))}: merma alta (${P(o.sp)}, ${S(o.sv)})`, 'Lo producido que no se vende es costo perdido.', [['Pasar a producción por tandas en los productos con más merma', 'Jefe de obrador', 'Próxima semana'], ['Revisar si el stock de seguridad está muy alto', 'Administración', 'Esta semana']]]);
     if (o.c < 0.98) plans.push(['warn', `${esc(nomU(o.u))}: cumplimiento ${P(o.c)}`, 'Se produjo menos de lo ordenado.', [['Anotar en la nota del registro la causa (insumo, personal, equipo)', esc(nomU(o.u)), 'Cada día']]]);
   });
   com.forEach(o => { if (o.ex != null && o.ex < 0.97) plans.push([o.ex < 0.94 ? 'bad' : 'warn', `${esc(nomU(o.u))}: exactitud del conteo ${P(o.ex)}`, 'La diferencia entre lo contado y lo que el sistema esperaba es merma no registrada o error de conteo.', [['Recontar los 5 insumos con más diferencia', esc(nomU(o.u)), 'Mañana'], ['Registrar mermas y vencidos al momento', 'Compras y obrador', 'Desde hoy']]]); if (o.ap && o.apT < o.ap) plans.push(['warn', `${esc(nomU(o.u))}: pedidos aprobados tarde`, 'Si el pedido sale tarde, el insumo puede no llegar para la producción del lunes.', [['Aprobar los pedidos el domingo con el correo del reporte', esc(nomU(o.u)), 'Cada domingo']]]); });
@@ -682,7 +711,7 @@ const ESC = [
   ['Orden de producción', 'Todos los días, 6:00 p. m.', 'Envía al obrador la orden de producción del día siguiente.', 'orden de producción'],
   ['Alerta de stock crítico', 'Todos los días, 6:00 p. m.', 'Si algún insumo no alcanza para los próximos días, avisa con la lista y cuánto falta.', 'stock crítico'],
   ['Pedidos a proveedores', 'Todos los días, 6:00 p. m.', 'Envía a cada proveedor el pedido que se aprobó en Compras y lo marca como enviado. Si nada se aprobó, no envía nada.', 'pedido'],
-  ['Reporte semanal', 'Domingos, 6:00 p. m.', 'Venta proyectada, precisión, cumplimiento de producción, sobrante, food cost, alertas y botón para aprobar los pedidos de la semana.', 'reporte'],
+  ['Reporte semanal', 'Domingos, 6:00 p. m.', 'Venta proyectada, precisión, cumplimiento de producción, merma, food cost, alertas y botón para aprobar los pedidos de la semana.', 'reporte'],
   ['Horas y eventos', 'Con cada carga de ventas', 'Reparte la venta del día por hora si el POS no la manda, y marca como atípico el día de un evento que ya pasó.', 'carga de ventas']];
 function rAuto() {
   const bit = RAW.bitacora || [], lastRun = n => bit.find(b => b.usuario === 'Make' && b.accion.toLowerCase().includes(n));
@@ -690,7 +719,16 @@ function rAuto() {
   $('#cf-obr').value = RAW.config.correo_obrador || ''; $('#cf-due').value = RAW.config.correo_dueno || ''; $('#cf-cob').value = RAW.config.dias_cobertura || '2';
   $('#cf-prov').innerHTML = '<tr><th>Proveedor</th><th>Correo</th><th>Día</th></tr>' + (RAW.proveedores || []).map(p => `<tr><td>${esc(p.nombre)}</td><td><input type="text" data-pe="${esc(p.nombre)}" value="${esc(p.email || '')}"></td><td><select data-pd="${esc(p.nombre)}">${['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].map(d => `<option ${d === p.dia_pedido ? 'selected' : ''}>${d}</option>`).join('')}</select></td></tr>`).join('');
   $('#m-url').textContent = API;
+  rUsuarios();
   $('#m-bit').innerHTML = '<tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Detalle</th></tr>' + bit.map(b => `<tr><td style="white-space:nowrap">${esc(b.fecha)}</td><td>${esc(b.usuario)}</td><td>${esc(b.accion)}</td><td class="note">${b.detalle ? esc(JSON.stringify(b.detalle)).slice(0, 140) : ''}</td></tr>`).join('');
+}
+const genClave = () => { const w = ['canela', 'trigo', 'cacao', 'vainilla', 'miel', 'nuez', 'mango', 'anis'], r = new Uint32Array(2); crypto.getRandomValues(r); return w[r[0] % w.length] + (1000 + r[1] % 9000); };
+function rUsuarios() {
+  const us = RAW.usuarios || [];
+  $('#u-table').innerHTML = '<thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Nueva clave</th><th></th></tr></thead>' + us.map(u => { const yo = u.usuario === USER.usuario, off = u.activo === false;
+    return `<tr><td data-l="Usuario"><b>${esc(u.usuario)}</b>${yo ? ' <span class="badge ok-b">Tú</span>' : ''}${off ? ' <span class="badge warn-b">Inactivo</span>' : ''}</td><td data-l="Nombre">${esc(u.nombre)}</td><td data-l="Rol">${ROL[u.rol] || esc(u.rol)}</td>
+    <td data-l="Nueva clave"><div style="display:flex;gap:6px;align-items:center"><input type="text" data-uc="${esc(u.usuario)}" placeholder="mín. 6 caracteres" autocapitalize="off" style="min-width:120px;flex:1"><button class="ghost" data-ug="${esc(u.usuario)}" title="Generar una clave">🎲</button><button data-us="${esc(u.usuario)}">Cambiar</button></div></td>
+    <td data-l="">${yo ? '' : `<button class="ghost" data-ua="${esc(u.usuario)}" data-v="${off ? 1 : 0}">${off ? 'Activar' : 'Desactivar'}</button>`}</td></tr>`; }).join('');
 }
 function rMarca() {
   const pal = [['Cacao', '#3B2418', 'Fondo de marca, textos y barra lateral'], ['Canela', '#A8552B', 'Color principal de acento y botones'], ['Miel', '#D69A3A', 'Destacados y proyección'], ['Miga', '#F5EBDD', 'Fondo claro y textos sobre cacao'], ['Arcilla', '#E3C3A3', 'Fondos secundarios y tablas'], ['Cardamomo', '#5F6B45', 'Indicadores en verde (estado correcto)']];
@@ -728,7 +766,10 @@ $('#rc-sel').addEventListener('change', rRecetario);
 $('#p-met').addEventListener('change', async e => { E.D.metodo = e.target.value; recalc(); rProy(); if (USER.rol === 'admin') { try { await api('/config', { method: 'POST', body: JSON.stringify({ metodo: E.D.metodo }) }); toast('Método guardado'); } catch (x) { toast(x.message); } } });
 $('#o-seg').addEventListener('change', async e => { E.D.colchon = +e.target.value; rProd(); try { await api('/config', { method: 'POST', body: JSON.stringify({ colchon: E.D.colchon }) }); toast('Stock de seguridad guardado: también lo usa Make'); } catch (x) { toast(x.message); } });
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-p],[data-b],[data-k],[data-d],[data-go],[data-prev],[data-apr],[data-pan],[data-prc],[data-hp]'); if (!t) return;
+  const t = e.target.closest('[data-p],[data-b],[data-k],[data-d],[data-go],[data-prev],[data-apr],[data-pan],[data-prc],[data-hp],[data-fdel],[data-fquit],[data-pbf]'); if (!t) return;
+  if (t.dataset.fdel !== undefined) { if (dobleToque(t, '¿Borrar? Toca otra vez')) borrarFotoProd(t.closest('tr')); return; }
+  if (t.dataset.fquit !== undefined) { const tr = t.closest('tr'); delete ST.fotos[tr.dataset.reg]; tr.querySelector('[data-fprev]').innerHTML = ''; tr.querySelector('[data-factual]')?.classList.remove('reemplaza'); marcarPend(); return; }
+  if (t.dataset.pbf) { if (dobleToque(t, '¿Borrar? Toca otra vez')) accionPedido(+t.dataset.pbf, 'borrar_foto'); return; }
   if (t.dataset.apr) { e.preventDefault(); aprobar([t.dataset.apr]); return; }
   if (t.dataset.pan) { accionPedido(+t.dataset.pan, 'anular'); return; }
   if (t.dataset.prc) { accionPedido(+t.dataset.prc, 'recibir'); return; }
@@ -751,9 +792,12 @@ document.addEventListener('change', async e => {
     const id = e.target.dataset.st, v = Math.max(0, +e.target.value * 1000 || 0), old = ST.stock[id] || 0; ST.stock[id] = v; rCompras();
     clearTimeout(stockTimers[id]); stockTimers[id] = setTimeout(async () => { try { await api('/stock', { method: 'POST', body: JSON.stringify({ insumo_id: id, ajuste: v - old }) }); toast('Stock guardado'); } catch (x) { toast(x.message); } }, 500);
   }
+  if ((e.target.dataset.prf || e.target.dataset.pcf || e.target.dataset.foto !== undefined) && e.target.files[0] && fotoVieja(e.target.files[0])) { toast('Esa foto es antigua. Toma una foto en el momento con la cámara.'); e.target.value = ''; return; }
   if (e.target.dataset.prf && e.target.files[0]) { accionPedido(+e.target.dataset.prf, 'recibir', e.target.files[0]); return; }
+  if (e.target.dataset.pcf && e.target.files[0]) { accionPedido(+e.target.dataset.pcf, 'foto', e.target.files[0]); return; }
   if (e.target.dataset.foto !== undefined && e.target.files[0]) { const tr = e.target.closest('tr'), f0 = e.target.files[0]; ST.fotos[tr.dataset.reg] = f0; tr.classList.add('dirty');
-    tr.querySelector("[data-fprev]").innerHTML = `<img class="thumb" src="${URL.createObjectURL(f0)}" alt="Foto nueva, falta guardar"><span class="badge warn-b">Foto lista</span>`; marcarPend(); }
+    tr.querySelector('[data-factual]')?.classList.add('reemplaza');
+    tr.querySelector("[data-fprev]").innerHTML = `<img class="thumb" src="${URL.createObjectURL(f0)}" alt="Foto nueva, falta guardar"><span class="badge warn-b">Por guardar</span><button class="ghost btn-sm" data-fquit>Quitar</button>`; marcarPend(); }
   if (e.target.dataset.evf || e.target.dataset.eva) {
     const id = +(e.target.dataset.evf || e.target.dataset.eva), ev = E.D.eventos.find(x => x.id === id), body = { id };
     if (e.target.dataset.evf) body.factor = +e.target.value; else body.activo = e.target.checked;
@@ -789,6 +833,23 @@ $('#up-reset').addEventListener('click', async () => {
 $('#i-tpl').addEventListener('click', plantillaInv);
 $('#i-file').addEventListener('change', e => { const f = e.target.files[0]; if (f) leerInv(f); e.target.value = ''; });
 document.addEventListener('click', e => { if (e.target.id === 'i-ok') confirmarInv(); if (e.target.id === 'i-cancel') { ST.inv = null; $('#i-prev').innerHTML = ''; } });
+$('#u-table').addEventListener('click', async e => {
+  const g = e.target.closest('[data-ug]'); if (g) { $(`[data-uc="${g.dataset.ug}"]`).value = genClave(); return; }
+  const s = e.target.closest('[data-us]');
+  if (s) { const usr = s.dataset.us, c = $(`[data-uc="${usr}"]`).value.trim(); if (c.length < 6) return toast('La clave debe tener al menos 6 caracteres');
+    s.disabled = true; try { await api('/usuarios', { method: 'PATCH', body: JSON.stringify({ usuario: usr, clave: c }) }); toast(`Clave de ${usr} cambiada: ${c}`); } catch (x) { toast(x.message); } s.disabled = false; return; }
+  const a = e.target.closest('[data-ua]');
+  if (a) { const act = a.dataset.v === '1'; a.disabled = true;
+    try { await api('/usuarios', { method: 'PATCH', body: JSON.stringify({ usuario: a.dataset.ua, activo: act }) }); const u = RAW.usuarios.find(x => x.usuario === a.dataset.ua); if (u) u.activo = act; rUsuarios(); toast(act ? 'Usuario activado' : 'Usuario desactivado: ya no puede entrar'); } catch (x) { toast(x.message); a.disabled = false; } }
+});
+$('#u-gen').addEventListener('click', () => { $('#u-cla').value = genClave(); });
+$('#u-add').addEventListener('click', async () => {
+  const b = { nombre: $('#u-nom').value.trim(), usuario: $('#u-usr').value.trim().toLowerCase(), rol: $('#u-rol').value, clave: $('#u-cla').value.trim() };
+  if (!b.nombre) return toast('Escribe el nombre'); if (!/^[a-z0-9._-]{3,20}$/.test(b.usuario)) return toast('Usuario: 3 a 20 letras o números, sin espacios');
+  if (b.clave.length < 6) return toast('La clave debe tener al menos 6 caracteres');
+  try { await api('/usuarios', { method: 'POST', body: JSON.stringify(b) }); (RAW.usuarios = RAW.usuarios || []).push({ usuario: b.usuario, nombre: b.nombre, rol: b.rol, activo: true }); rUsuarios();
+    toast(`Usuario ${b.usuario} creado con clave ${b.clave}`); ['#u-nom', '#u-usr'].forEach(x => $(x).value = ''); } catch (x) { toast(x.message); }
+});
 $('#cf-save').addEventListener('click', async () => {
   const proveedores = $$('[data-pe]').map(i => ({ nombre: i.dataset.pe, email: i.value.trim(), dia_pedido: $(`[data-pd="${CSS.escape(i.dataset.pe)}"]`).value }));
   const b = { correo_obrador: $('#cf-obr').value.trim(), correo_dueno: $('#cf-due').value.trim(), dias_cobertura: $('#cf-cob').value, proveedores };
@@ -824,7 +885,7 @@ $('#login-f').addEventListener('submit', async e => {
   finally { btn.disabled = false; btn.textContent = 'Ingresar'; }
 });
 // ---------- app: instalar, avisos al celular, sin señal y actualización automática (igual que el checklist)
-const APP_VER = '2026-11-27b';
+const APP_VER = '2026-11-27e';
 const esRed = x => x instanceof TypeError || /network|failed to fetch|load failed|sin señal/i.test(String(x && x.message));
 const esStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone;
 const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
